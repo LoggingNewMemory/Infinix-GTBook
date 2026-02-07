@@ -1,6 +1,3 @@
-# This is partially working since the max fan actually increase. However I don't know how to make it 
-# Same as the original behaviour. For now this is the best I can achieve
-
 #!/usr/bin/env python3
 import sys
 import os
@@ -8,110 +5,121 @@ import struct
 import time
 
 # --- Configuration ---
-# EC Index/Data Ports (corresponds to 768u in C# code)
 EC_INDEX_PORT = 0x300
 EC_DATA_PORT  = 0x301
 
-# Address 64 (0x40) confirmed in SetPerformanceMode.cs
-PERF_MODE_ADDR = 0x40
+# Addresses from BYD WMI .cs
+ADDR_PERF_MODE   = 0x40  # 64
+ADDR_FAN_BOOST   = 0x41  # 65
+ADDR_TURBO       = 0x67  # 103
+ADDR_CUSTOM_MODE = 0x69  # 105 (Key fix: Disable custom curves)
 
-# Address 65 (0x41) confirmed in SetFanFullMode.cs
-FAN_BOOST_ADDR = 0x41 
-
-# Trigger Value 161 (0xA1) confirmed in ECWriteRamCMD
-CMD_TRIGGER_WRITE = 0xA1 
-
-# Performance Modes from SetPerformanceMode.cs
+# Modes
 MODE_OFFICE  = 0x00
 MODE_BALANCE = 0x01
 MODE_GAMING  = 0x02
+MODE_TURBO   = 0x03  # Value 3 found in SetPerformanceMode switch case
 
 def check_root():
     if os.geteuid() != 0:
-        print("[-] Error: Root privileges required. Run with sudo.")
+        print("[-] Root privileges required.")
         sys.exit(1)
 
-def ec_write_byte(port_fd, index, value):
-    """
-    Writes a byte to the EC.
-    Replicates IO(768u, 1, index, value) from C#.
-    """
+def ec_io(port_fd, index, value):
     try:
         # Write Index to 0x300
         port_fd.seek(EC_INDEX_PORT)
         port_fd.write(struct.pack('B', index))
         
+        # Short delay between Index and Data is crucial for some ECs
+        time.sleep(0.005) 
+        
         # Write Value to 0x301
         port_fd.seek(EC_DATA_PORT)
         port_fd.write(struct.pack('B', value))
         
-        # Necessary delay for hardware processing
-        time.sleep(0.005)
+        # Safe delay for EC processing
+        time.sleep(0.05) 
     except OSError as e:
-        print(f"[-] I/O Error on index {hex(index)}: {e}")
-        sys.exit(1)
+        print(f"[-] I/O Error: {e}")
 
-def send_ec_ram_cmd(port, address, value):
+def ec_write_ram_cmd(port_fd, address, value):
     """
-    Generic function to write to EC RAM using the initialization sequence
-    found in ECWriteRamCMD.cs.
+    Exact replication of ECWriteRamCMD from BYD WMI .cs
+    Sequence: 0x94 -> 0x91 -> 0x92 -> 0x92(1) -> 0x90 -> 0x91(Addr) -> 0xA0(Val) -> 0x93(0xA1)
     """
-    # 1. Initialization Sequence
-    ec_write_byte(port, 0x94, 0x00) # Index 148
-    ec_write_byte(port, 0x91, 0x00) # Index 145
-    ec_write_byte(port, 0x92, 0x00) # Index 146
-    ec_write_byte(port, 0x92, 0x01) # Index 146 (Value 1)
-    ec_write_byte(port, 0x90, 0x00) # Index 144
+    # 1. Initialization / Handshake
+    ec_io(port_fd, 0x94, 0x00) 
+    ec_io(port_fd, 0x91, 0x00) 
+    ec_io(port_fd, 0x92, 0x00) 
+    ec_io(port_fd, 0x92, 0x01) # Unlock/Bank Switch
+    ec_io(port_fd, 0x90, 0x00) 
     
-    # 2. Set Address (e.g., 0x40 for Mode, 0x41 for Fan)
-    ec_write_byte(port, 0x91, address)
+    # 2. Set Target Address
+    ec_io(port_fd, 0x91, address) 
     
     # 3. Set Value
-    ec_write_byte(port, 0xA0, value) # Index 160
+    ec_io(port_fd, 0xA0, value) 
     
-    # 4. Trigger Write
-    ec_write_byte(port, 0x93, CMD_TRIGGER_WRITE) # Index 147
+    # 4. Trigger Execution (Commit)
+    ec_io(port_fd, 0x93, 0xA1) 
 
 def set_fan_max(enable: bool):
     try:
         with open("/dev/port", "rb+", buffering=0) as port:
             if enable:
-                print("[*] Switching to Gaming Mode (Instant Response)...")
-                # Set Performance Mode to GAMING (2) first to remove smoothing
-                send_ec_ram_cmd(port, PERF_MODE_ADDR, MODE_GAMING)
+                print("[*] Activating SKYROCKET Mode...")
                 
-                print("[*] Engaging Max Fan Boost...")
-                # Set Fan Boost to ON (1)
-                send_ec_ram_cmd(port, FAN_BOOST_ADDR, 1)
-                print("[+] Success: Fan set to MAX (Gaming Mode).")
+                # 1. CRITICAL: Disable Custom Fan Mode (Addr 105 -> 0)
+                # If this is 1, the EC ignores the Max Fan command and uses a curve.
+                print("   -> Disabling Custom Fan Curves...")
+                ec_write_ram_cmd(port, ADDR_CUSTOM_MODE, 0)
+                
+                # 2. Set Performance Mode to TURBO (Addr 64 -> 3)
+                print("   -> Setting Performance Mode to Turbo...")
+                ec_write_ram_cmd(port, ADDR_PERF_MODE, MODE_TURBO)
+                
+                # 3. Set Turbo Flag (Addr 103 -> 3)
+                # Found in SetGBoxTurbo(true)
+                print("   -> Enabling GBox Turbo...")
+                ec_write_ram_cmd(port, ADDR_TURBO, 3)
+
+                # 4. Set Fan Full Mode (Addr 65 -> 1)
+                # This is the "Max Fan" override switch
+                print("   -> Triggering MAX FAN...")
+                ec_write_ram_cmd(port, ADDR_FAN_BOOST, 1)
+                
+                print("[+] DONE. Fan should skyrocket now.")
                 
             else:
-                print("[*] Disabling Max Fan Boost...")
-                # Set Fan Boost to OFF (0)
-                send_ec_ram_cmd(port, FAN_BOOST_ADDR, 0)
+                print("[*] Deactivating MAX FAN Mode...")
                 
-                print("[*] Reverting to Balance Mode...")
-                # Revert Performance Mode to BALANCE (1) for normal usage
-                send_ec_ram_cmd(port, PERF_MODE_ADDR, MODE_BALANCE)
-                print("[+] Success: Fan returned to Normal (Balance Mode).")
+                # 1. Disable Fan Full Mode
+                ec_write_ram_cmd(port, ADDR_FAN_BOOST, 0)
+
+                # 2. Disable Turbo Flag (Addr 103 -> 2)
+                ec_write_ram_cmd(port, ADDR_TURBO, 2)
+                
+                # 3. Revert to Balance Mode
+                ec_write_ram_cmd(port, ADDR_PERF_MODE, MODE_BALANCE)
+                
+                print("[+] FAN NORMALIZED")
             
     except FileNotFoundError:
-        print("[-] Error: /dev/port not found. Ensure kernel module 'port' is loaded.")
+        print("[-] Error: /dev/port not found. Ensure 'CONFIG_DEVPORT' is enabled in kernel.")
     except Exception as e:
-        print(f"[-] An error occurred: {e}")
+        print(f"[-] Error: {e}")
 
 if __name__ == "__main__":
     check_root()
-    
     if len(sys.argv) < 2:
-        print("Usage: sudo python3 maxfan.py [on|off]")
+        print("Usage: sudo python3 maxfan_fixed.py [on|off]")
         sys.exit(1)
         
     mode = sys.argv[1].lower()
-    
     if mode == "on":
         set_fan_max(True)
     elif mode == "off":
         set_fan_max(False)
     else:
-        print("Invalid argument. Use 'on' or 'off'.")
+        print("Invalid argument.")
