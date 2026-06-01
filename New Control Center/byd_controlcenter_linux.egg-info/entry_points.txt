@@ -1,0 +1,2 @@
+[console_scripts]
+byd-controlcenter = controlcenter.app:main
