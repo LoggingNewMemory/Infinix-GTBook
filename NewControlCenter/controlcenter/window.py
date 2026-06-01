@@ -149,14 +149,40 @@ class MainWindow(Adw.ApplicationWindow):
         bright_row.add_suffix(self.brightness_scale)
         group.add(bright_row)
         
-        # Apply Button
+        page.add(group)
+        
+        # Rhythm Settings Group
+        self.rhythm_group = Adw.PreferencesGroup(title="Rhythm & Spectrum Settings")
+        
+        sens_row = Adw.ActionRow(title="Sensitivity")
+        sens_row.set_subtitle("Adjust how strongly LEDs react to sound")
+        self.sens_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
+        self.sens_scale.set_value(35)
+        self.sens_scale.set_valign(Gtk.Align.CENTER)
+        self.sens_scale.set_size_request(200, -1)
+        sens_row.add_suffix(self.sens_scale)
+        self.rhythm_group.add(sens_row)
+        
+        smooth_row = Adw.ActionRow(title="Smoothness")
+        smooth_row.set_subtitle("Adjust the attack/decay speed of the lights")
+        self.smooth_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
+        self.smooth_scale.set_value(0)
+        self.smooth_scale.set_valign(Gtk.Align.CENTER)
+        self.smooth_scale.set_size_request(200, -1)
+        smooth_row.add_suffix(self.smooth_scale)
+        self.rhythm_group.add(smooth_row)
+        
+        page.add(self.rhythm_group)
+        
+        # Apply Group
+        apply_group = Adw.PreferencesGroup()
         apply_btn = Gtk.Button(label="Apply Lighting")
         apply_btn.set_margin_top(12)
         apply_btn.add_css_class("suggested-action")
         apply_btn.connect("clicked", self.apply_lighting)
-        group.add(apply_btn)
+        apply_group.add(apply_btn)
         
-        page.add(group)
+        page.add(apply_group)
         self.stack.add_titled(page, "lighting", "Lighting")
 
     def on_zone_changed(self, dropdown, pspec):
@@ -194,6 +220,9 @@ class MainWindow(Adw.ApplicationWindow):
         brightness_pct = self.brightness_scale.get_value()
         brightness = int((brightness_pct / 100.0) * 255)
         
+        sens = int(self.sens_scale.get_value())
+        smooth = int(self.smooth_scale.get_value())
+        
         if zone == 0:
             # Main Keyboard
             mode_map = {
@@ -224,7 +253,7 @@ class MainWindow(Adw.ApplicationWindow):
             mapped_mode = mode_map_back.get(idx, BackLightCmd.Light_AlwaysOn)
             if idx == 0:
                 hex_color = "#000000"
-            self.lighting.set_serial_back_zone_mode(mapped_mode, hex_color, brightness=brightness)
+            self.lighting.set_serial_back_zone_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth)
 
     def update_monitors(self):
         cpu_temp = self.monitor.get_cpu_temp()

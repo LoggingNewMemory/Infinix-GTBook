@@ -21,10 +21,10 @@ class LightingService:
         self._anim_thread = None
         self._stop_event = threading.Event()
 
-    def start_animation(self, mode, r, g, b, brightness, is_rainbow=False):
+    def start_animation(self, mode, r, g, b, brightness, is_rainbow=False, sens=50, smooth=50):
         self.stop_animation()
         self._stop_event.clear()
-        self._anim_thread = threading.Thread(target=self._anim_loop, args=(mode, r, g, b, brightness, is_rainbow, self._stop_event), daemon=True)
+        self._anim_thread = threading.Thread(target=self._anim_loop, args=(mode, r, g, b, brightness, is_rainbow, sens, smooth, self._stop_event), daemon=True)
         self._anim_thread.start()
 
     def stop_animation(self):
@@ -33,7 +33,7 @@ class LightingService:
             self._anim_thread.join(timeout=1.0)
             self._anim_thread = None
 
-    def _anim_loop(self, mode, r, g, b, brightness, is_rainbow, stop_event):
+    def _anim_loop(self, mode, r, g, b, brightness, is_rainbow, sens, smooth, stop_event):
         from controlcenter.models.tx_buf import get_back_zone_packet
         import time
         import colorsys
@@ -94,15 +94,24 @@ class LightingService:
             peak_b3 = max(peak_b3 * 0.99, b3_raw, 0.002)
             peak_b4 = max(peak_b4 * 0.99, b4_raw, 0.002)
             
-            # Normalize against the AGC peak, and square it for a punchier visual curve!
-            v1 = min(255.0, ((b1_raw / peak_b1) ** 1.5) * 255.0)
-            v2 = min(255.0, ((b2_raw / peak_b2) ** 1.5) * 255.0)
-            v3 = min(255.0, ((b3_raw / peak_b3) ** 1.5) * 255.0)
-            v4 = min(255.0, ((b4_raw / peak_b4) ** 1.5) * 255.0)
+            # Smooth Attack and Decay based on UI (0 to 100)
+            # Higher smooth -> lower attack/decay values (slower reaction)
+            smooth_val = max(0.0, min(100.0, smooth)) / 100.0
             
-            # Smooth Attack and Decay
-            attack = 0.85
-            decay = 0.25
+            # Map smooth to attack: 1.0 (fast) down to 0.1 (slow)
+            attack = 1.0 - (smooth_val * 0.9)
+            # Map smooth to decay: 0.5 (fast) down to 0.05 (slow)
+            decay = 0.5 - (smooth_val * 0.45)
+            
+            # Sensitivity (Gain multiplier) based on UI (0 to 100)
+            sens_val = max(0.0, min(100.0, sens)) / 50.0
+            # Square the sensitivity to give a steep exponential range (0.0004 to 4.0)
+            gain = sens_val ** 2.0
+            
+            v1 = min(255.0, (((b1_raw / peak_b1) ** 1.5) * 255.0 * gain))
+            v2 = min(255.0, (((b2_raw / peak_b2) ** 1.5) * 255.0 * gain))
+            v3 = min(255.0, (((b3_raw / peak_b3) ** 1.5) * 255.0 * gain))
+            v4 = min(255.0, (((b4_raw / peak_b4) ** 1.5) * 255.0 * gain))
             
             current_b1 += (attack if v1 > current_b1 else decay) * (v1 - current_b1)
             current_b2 += (attack if v2 > current_b2 else decay) * (v2 - current_b2)
@@ -170,7 +179,7 @@ class LightingService:
             return True
         return False
         
-    def set_serial_back_zone_mode(self, mode_enum_val: int, color_hex: str = "#FFFFFF", brightness: int = 100):
+    def set_serial_back_zone_mode(self, mode_enum_val: int, color_hex: str = "#FFFFFF", brightness: int = 100, sens: int = 50, smooth: int = 50):
         r, g, b = self._hex_to_rgb(color_hex)
         from controlcenter.models.tx_buf import get_back_zone_packet, BackLightCmd
         
@@ -182,7 +191,7 @@ class LightingService:
         self.stop_animation()
         
         if mode_enum_val in (BackLightCmd.Light_Rythm, BackLightCmd.Light_Jump):
-            self.start_animation(mode_enum_val, r, g, b, brightness, is_rainbow)
+            self.start_animation(mode_enum_val, r, g, b, brightness, is_rainbow, sens, smooth)
             return True
         
         speed = 1
