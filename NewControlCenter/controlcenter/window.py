@@ -121,6 +121,7 @@ class MainWindow(Adw.ApplicationWindow):
             "Keyboard", 
             "Back Zone"
         ])
+        self.zone_dropdown.connect("notify::selected", self.on_zone_changed)
         zone_row.add_suffix(self.zone_dropdown)
         group.add(zone_row)
         
@@ -134,10 +135,19 @@ class MainWindow(Adw.ApplicationWindow):
         # Mode selector
         mode_row = Adw.ActionRow(title="Effect")
         self.mode_dropdown = Gtk.DropDown.new_from_strings([
-            "Off", "Static", "Breathing", "Gradual Change", "Rainbow", "Flow", "Wave"
+            "Off", "Static Color", "Breathing", "Neon Cycle", "Rainbow", "Flow", "Wave"
         ])
         mode_row.add_suffix(self.mode_dropdown)
         group.add(mode_row)
+        
+        # Brightness slider
+        bright_row = Adw.ActionRow(title="Brightness")
+        self.brightness_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
+        self.brightness_scale.set_value(100)
+        self.brightness_scale.set_valign(Gtk.Align.CENTER)
+        self.brightness_scale.set_size_request(200, -1)
+        bright_row.add_suffix(self.brightness_scale)
+        group.add(bright_row)
         
         # Apply Button
         apply_btn = Gtk.Button(label="Apply Lighting")
@@ -148,6 +158,13 @@ class MainWindow(Adw.ApplicationWindow):
         
         page.add(group)
         self.stack.add_titled(page, "lighting", "Lighting")
+
+    def on_zone_changed(self, dropdown, pspec):
+        zone = dropdown.get_selected()
+        if zone == 0:
+            self.mode_dropdown.set_model(Gtk.StringList.new(["Off", "Static Color", "Breathing", "Neon Cycle", "Rainbow", "Flow", "Wave"]))
+        elif zone == 1:
+            self.mode_dropdown.set_model(Gtk.StringList.new(["Off", "Static Color", "Breathing", "Rhythm", "Rainbow Rhythm", "Jump", "Round", "Cover"]))
 
     def set_performance_mode(self, mode: int):
         self.btn_office.remove_css_class("suggested-action")
@@ -173,6 +190,10 @@ class MainWindow(Adw.ApplicationWindow):
         idx = self.mode_dropdown.get_selected()
         zone = self.zone_dropdown.get_selected()
         
+        # Scale 0-100 percentage to 0-255 hardware range for maximum brightness
+        brightness_pct = self.brightness_scale.get_value()
+        brightness = int((brightness_pct / 100.0) * 255)
+        
         if zone == 0:
             # Main Keyboard
             mode_map = {
@@ -186,7 +207,7 @@ class MainWindow(Adw.ApplicationWindow):
             }
             mapped_mode = mode_map.get(idx, KeyboardLightMode.Always)
             from controlcenter.models.tx_buf import Command
-            self.lighting.set_zone_mode(Command.KeyBoard_Light, mapped_mode, hex_color, brightness=255)
+            self.lighting.set_zone_mode(Command.KeyBoard_Light, mapped_mode, hex_color, brightness=brightness)
             
         elif zone == 1:
             # Back Zone (Serial ttyS4)
@@ -194,15 +215,16 @@ class MainWindow(Adw.ApplicationWindow):
                 0: BackLightCmd.Light_Close,
                 1: BackLightCmd.Light_AlwaysOn,
                 2: BackLightCmd.Light_Breath,
-                3: BackLightCmd.SliceMode, # Equivalent to Gradual
-                4: BackLightCmd.Light_Round, # Equivalent to Rainbow
-                5: BackLightCmd.Light_Cover, # Flow/Cover
-                6: BackLightCmd.Light_Jump
+                3: BackLightCmd.Light_Rythm,
+                4: 99, # 99 is our custom Rainbow Rhythm
+                5: BackLightCmd.Light_Jump,
+                6: BackLightCmd.Light_Round,
+                7: BackLightCmd.Light_Cover
             }
             mapped_mode = mode_map_back.get(idx, BackLightCmd.Light_AlwaysOn)
             if idx == 0:
                 hex_color = "#000000"
-            self.lighting.set_serial_back_zone_mode(mapped_mode, hex_color, brightness=100)
+            self.lighting.set_serial_back_zone_mode(mapped_mode, hex_color, brightness=brightness)
 
     def update_monitors(self):
         cpu_temp = self.monitor.get_cpu_temp()

@@ -1,5 +1,8 @@
 import logging
 from typing import Tuple
+import threading
+import time
+import random
 
 from controlcenter.models.tx_buf import (
     Command, KeyboardLightMode, KeyboardLight12Mode, get_keyboard_led_packet, 
@@ -15,6 +18,120 @@ class LightingService:
     def __init__(self, usb_service: USBService, serial_service: SerialService):
         self.usb = usb_service
         self.serial = serial_service
+        self._anim_thread = None
+        self._stop_event = threading.Event()
+
+    def start_animation(self, mode, r, g, b, brightness, is_rainbow=False):
+        self.stop_animation()
+        self._stop_event.clear()
+        self._anim_thread = threading.Thread(target=self._anim_loop, args=(mode, r, g, b, brightness, is_rainbow, self._stop_event), daemon=True)
+        self._anim_thread.start()
+
+    def stop_animation(self):
+        self._stop_event.set()
+        if self._anim_thread:
+            self._anim_thread.join(timeout=1.0)
+            self._anim_thread = None
+
+    def _anim_loop(self, mode, r, g, b, brightness, is_rainbow, stop_event):
+        from controlcenter.models.tx_buf import get_back_zone_packet
+        import time
+        import colorsys
+        try:
+            import sounddevice as sd
+            import numpy as np
+        except ImportError:
+            logger.error("sounddevice or numpy not installed. Cannot use real audio rhythm.")
+            return
+
+        # 4 Frequency Bands for the Spectrum Analyzer
+        current_b1 = 0.0
+        current_b2 = 0.0
+        current_b3 = 0.0
+        current_b4 = 0.0
+
+        # AGC (Automatic Gain Control) Peak Tracking
+        peak_b1 = 0.002
+        peak_b2 = 0.002
+        peak_b3 = 0.002
+        peak_b4 = 0.002
+        
+        rainbow_hue = 0.0
+
+        def audio_callback(indata, frames, time_info, status):
+            nonlocal current_b1, current_b2, current_b3, current_b4
+            nonlocal peak_b1, peak_b2, peak_b3, peak_b4, rainbow_hue
+            if stop_event.is_set():
+                raise sd.CallbackStop
+            
+            # Mix down to mono for frequency analysis
+            mono_data = np.mean(indata, axis=1) if indata.shape[1] > 1 else indata[:, 0]
+            
+            # Apply a Hanning window to reduce spectral leakage
+            window = np.hanning(len(mono_data))
+            windowed = mono_data * window
+            
+            # Compute FFT (Fast Fourier Transform)
+            fft_result = np.fft.rfft(windowed)
+            # Normalize magnitude
+            fft_mag = np.abs(fft_result) * 2.0 / len(mono_data)
+            
+            # 1. Bass:       43Hz - 250Hz   (Bins 1 to 6)
+            # 2. Low-Mid:    250Hz - 1000Hz (Bins 6 to 23)
+            # 3. High-Mid:   1000Hz - 4000Hz(Bins 23 to 93)
+            # 4. Treble:     4000Hz - 16kHz (Bins 93 to 372)
+            
+            b1_raw = np.mean(fft_mag[1:6])
+            b2_raw = np.mean(fft_mag[6:23])
+            b3_raw = np.mean(fft_mag[23:93])
+            b4_raw = np.mean(fft_mag[93:372])
+            
+            # Automatic Gain Control (AGC): 
+            # Slowly decay the peak tracking, but instantly rise to new loud peaks.
+            # We enforce a hard minimum (0.002) so pure background silence doesn't get amplified.
+            peak_b1 = max(peak_b1 * 0.99, b1_raw, 0.002)
+            peak_b2 = max(peak_b2 * 0.99, b2_raw, 0.002)
+            peak_b3 = max(peak_b3 * 0.99, b3_raw, 0.002)
+            peak_b4 = max(peak_b4 * 0.99, b4_raw, 0.002)
+            
+            # Normalize against the AGC peak, and square it for a punchier visual curve!
+            v1 = min(255.0, ((b1_raw / peak_b1) ** 1.5) * 255.0)
+            v2 = min(255.0, ((b2_raw / peak_b2) ** 1.5) * 255.0)
+            v3 = min(255.0, ((b3_raw / peak_b3) ** 1.5) * 255.0)
+            v4 = min(255.0, ((b4_raw / peak_b4) ** 1.5) * 255.0)
+            
+            # Smooth Attack and Decay
+            attack = 0.85
+            decay = 0.25
+            
+            current_b1 += (attack if v1 > current_b1 else decay) * (v1 - current_b1)
+            current_b2 += (attack if v2 > current_b2 else decay) * (v2 - current_b2)
+            current_b3 += (attack if v3 > current_b3 else decay) * (v3 - current_b3)
+            current_b4 += (attack if v4 > current_b4 else decay) * (v4 - current_b4)
+            
+            fd1 = int(current_b1)
+            fd2 = int(current_b2)
+            fd3 = int(current_b3)
+            fd4 = int(current_b4)
+            
+            if is_rainbow:
+                # Cycle hue over time (approx 5 seconds for a full cycle at ~43 fps)
+                rainbow_hue = (rainbow_hue + 0.005) % 1.0
+                cr, cg, cb = colorsys.hsv_to_rgb(rainbow_hue, 1.0, 1.0)
+                cur_r, cur_g, cur_b = int(cr * 255), int(cg * 255), int(cb * 255)
+            else:
+                cur_r, cur_g, cur_b = r, g, b
+            
+            packet = get_back_zone_packet(mode, cur_r, cur_g, cur_b, brightness, speed=1, fd1=fd1, fd2=fd2, fd3=fd3, fd4=fd4)
+            self.serial.send_data(packet)
+
+        try:
+            # Blocksize 1024 = ~23ms updates (super fast ~43 fps for fluid lighting)
+            with sd.InputStream(callback=audio_callback, blocksize=1024):
+                while not stop_event.is_set():
+                    stop_event.wait(0.5)
+        except Exception as e:
+            logger.error(f"Audio capture failed: {e}")
 
     def _hex_to_rgb(self, hex_color: str) -> Tuple[int, int, int]:
         hex_color = hex_color.lstrip('#')
@@ -53,12 +170,35 @@ class LightingService:
             return True
         return False
         
-    def set_serial_back_zone_mode(self, mode_enum_val: int, color_hex: str = "#FFFFFF", brightness: int = 255):
+    def set_serial_back_zone_mode(self, mode_enum_val: int, color_hex: str = "#FFFFFF", brightness: int = 100):
         r, g, b = self._hex_to_rgb(color_hex)
-        from controlcenter.models.tx_buf import get_back_zone_packet
-        packet = get_back_zone_packet(mode_enum_val, r, g, b, brightness, speed=1)
+        from controlcenter.models.tx_buf import get_back_zone_packet, BackLightCmd
+        
+        is_rainbow = False
+        if mode_enum_val == 99:
+            mode_enum_val = BackLightCmd.Light_Rythm
+            is_rainbow = True
+        
+        self.stop_animation()
+        
+        if mode_enum_val in (BackLightCmd.Light_Rythm, BackLightCmd.Light_Jump):
+            self.start_animation(mode_enum_val, r, g, b, brightness, is_rainbow)
+            return True
+        
+        speed = 1
+        fd1, fd2, fd3, fd4 = 0, 0, 0, 0
+        if mode_enum_val == BackLightCmd.Light_Close:
+            speed = 200
+        elif mode_enum_val in (BackLightCmd.Light_Round, BackLightCmd.Light_Cover):
+            speed = 4
+            fd1, fd2, fd3, fd4 = 48, 235, 231, 100
+        elif mode_enum_val in (BackLightCmd.Light_Rythm, BackLightCmd.Light_Jump):
+            self.start_animation(mode_enum_val, r, g, b, brightness)
+            return True
+            
+        packet = get_back_zone_packet(mode_enum_val, r, g, b, brightness, speed=speed, fd1=fd1, fd2=fd2, fd3=fd3, fd4=fd4)
         if self.serial.send_data(packet):
-            logger.info(f"Set serial back zone mode {mode_enum_val} color {color_hex}")
+            logger.info(f"Set serial back zone mode {mode_enum_val} color {color_hex} speed {speed}")
             return True
         return False
 

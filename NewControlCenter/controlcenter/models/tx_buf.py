@@ -73,7 +73,7 @@ class BackLightCmd(enum.IntEnum):
     BalanceMode = 8
     GameMode = 9
 
-def get_back_zone_packet(mode: int, r: int, g: int, b: int, brightness: int = 100, speed: int = 1) -> bytearray:
+def get_back_zone_packet(mode: int, r: int, g: int, b: int, brightness: int = 100, speed: int = 1, fd1: int = 0, fd2: int = 0, fd3: int = 0, fd4: int = 0) -> bytearray:
     buf = bytearray(17)
     buf[0] = 52  # h1
     buf[1] = 14  # h2
@@ -87,7 +87,11 @@ def get_back_zone_packet(mode: int, r: int, g: int, b: int, brightness: int = 10
     buf[9] = speed
     buf[10] = int(brightness * 0.44) # l1
     buf[11] = 0 # l2
-    # Bytes 12-16 remain 0
+    buf[12] = fd1
+    buf[13] = fd2
+    buf[14] = fd3
+    buf[15] = fd4
+    # Byte 16 is checksum, which is not used (0)
     return buf
 class RxField(enum.IntEnum):
     CPU_FAN1_Speed = 9
