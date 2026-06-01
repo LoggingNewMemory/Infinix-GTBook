@@ -88,6 +88,17 @@ class MainWindow(Adw.ApplicationWindow):
         mode_box.append(self.btn_gaming)
         
         mode_group.add(mode_box)
+        
+        # Max Fan
+        max_fan_row = Adw.ActionRow(title="Max Fan")
+        max_fan_row.set_subtitle("Forces fans to run at maximum speed unconditionally")
+        self.max_fan_switch = Gtk.Switch()
+        self.max_fan_switch.set_valign(Gtk.Align.CENTER)
+        self.max_fan_switch.connect("state-set", self.on_max_fan_toggled)
+        max_fan_row.add_suffix(self.max_fan_switch)
+        
+        mode_group.add(max_fan_row)
+        
         page.add(mode_group)
         
         # Monitoring Group
@@ -203,15 +214,36 @@ class MainWindow(Adw.ApplicationWindow):
         
         if mode == 1:
             self.btn_office.add_css_class("suggested-action")
-            self.fan.set_fan_mode(FanCtrlMode.OfficeMode)
+            target_fan_mode = FanCtrlMode.OfficeMode
         elif mode == 2:
             self.btn_balance.add_css_class("suggested-action")
-            self.fan.set_fan_mode(FanCtrlMode.PerformanceMode)
+            target_fan_mode = FanCtrlMode.PerformanceMode
         else:
             self.btn_gaming.add_css_class("suggested-action")
-            self.fan.set_fan_mode(FanCtrlMode.GamingMode)
+            target_fan_mode = FanCtrlMode.GamingMode
             
         self.fan.set_performance_mode(mode)
+        
+        if hasattr(self, 'max_fan_switch') and self.max_fan_switch.get_active():
+            self.fan.set_fan_mode(FanCtrlMode.FullSpeed)
+        else:
+            self.fan.set_fan_mode(target_fan_mode)
+
+    def on_max_fan_toggled(self, switch, state):
+        if state:
+            self.fan.set_fan_mode(FanCtrlMode.FullSpeed)
+        else:
+            # We must explicitly send the FullSpeedOff packet to disengage the hardware override
+            self.fan.set_fan_mode(FanCtrlMode.FullSpeedOff)
+            
+            # Then restore the proper mode
+            if self.btn_office.has_css_class("suggested-action"):
+                self.fan.set_fan_mode(FanCtrlMode.OfficeMode)
+            elif self.btn_balance.has_css_class("suggested-action"):
+                self.fan.set_fan_mode(FanCtrlMode.PerformanceMode)
+            elif self.btn_gaming.has_css_class("suggested-action"):
+                self.fan.set_fan_mode(FanCtrlMode.GamingMode)
+        return False
 
     def apply_lighting(self, btn):
         color = self.color_button.get_rgba()
