@@ -118,8 +118,12 @@ class MainWindow(Adw.ApplicationWindow):
         # Zone selector
         zone_row = Adw.ActionRow(title="Zone")
         self.zone_dropdown = Gtk.DropDown.new_from_strings([
-            "Keyboard", 
-            "Back Zone"
+            "Main Keyboard (All)",
+            "Keyboard Zone 1 (Left)",
+            "Keyboard Zone 2 (Mid-Left)",
+            "Keyboard Zone 3 (Mid-Right)",
+            "Keyboard Zone 4 (Right)",
+            "Back Zone (Laptop Rear)"
         ])
         self.zone_dropdown.connect("notify::selected", self.on_zone_changed)
         zone_row.add_suffix(self.zone_dropdown)
@@ -187,9 +191,9 @@ class MainWindow(Adw.ApplicationWindow):
 
     def on_zone_changed(self, dropdown, pspec):
         zone = dropdown.get_selected()
-        if zone == 0:
+        if zone < 5:
             self.mode_dropdown.set_model(Gtk.StringList.new(["Off", "Static Color", "Breathing", "Neon Cycle", "Rainbow", "Flow", "Wave"]))
-        elif zone == 1:
+        elif zone == 5:
             self.mode_dropdown.set_model(Gtk.StringList.new(["Off", "Static Color", "Breathing", "Rhythm", "Rainbow Rhythm", "Jump", "Round", "Cover"]))
 
     def set_performance_mode(self, mode: int):
@@ -235,10 +239,22 @@ class MainWindow(Adw.ApplicationWindow):
                 6: KeyboardLightMode.Wave
             }
             mapped_mode = mode_map.get(idx, KeyboardLightMode.Always)
-            from controlcenter.models.tx_buf import Command
-            self.lighting.set_zone_mode(Command.KeyBoard_Light, mapped_mode, hex_color, brightness=brightness)
+            if idx == 0:
+                hex_color = "#000000"
+            self.lighting.set_keyboard_mode(mapped_mode, hex_color, brightness=brightness)
+        elif 1 <= zone <= 4:
+            # Individual Keyboard Zones
+            cmd_map = {1: 6, 2: 6, 3: 7, 4: 7}
+            offset_map = {1: 0, 2: 4, 3: 0, 4: 4}
+            cmd = cmd_map[zone]
+            offset = offset_map[zone]
             
-        elif zone == 1:
+            param = offset | idx
+            if idx == 0:
+                hex_color = "#000000"
+                
+            self.lighting.set_zone_mode(cmd, param, hex_color, brightness=brightness)
+        elif zone == 5:
             # Back Zone (Serial ttyS4)
             mode_map_back = {
                 0: BackLightCmd.Light_Close,
