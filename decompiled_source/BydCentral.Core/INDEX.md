@@ -1,0 +1,519 @@
+# BydCentral.Core.dll - Decompiled Source Index
+
+- **Assembly**: BydCentral.Core.dll
+- **Types**: 120
+- **Total Methods**: 503
+
+## Namespace: `<global>`
+
+- **Struct** `__StaticArrayInitTypeSize=3` - 1 methods, 0 properties
+- **Struct** `__StaticArrayInitTypeSize=64` - 1 methods, 0 properties
+
+## Namespace: `BydCentral.Core.Models`
+
+- **Enum** `ACTION` - 1 methods, 0 properties
+- **Struct** `Address1` - 1 methods, 0 properties
+- **Struct** `Address2` - 1 methods, 0 properties
+- **Class** `Back_light_buf` - 4 methods, 0 properties
+  - `setBackLight(COMMAND mode, Byte r, Byte g, Byte b, Byte speed, Byte l, Byte[] AudioData)`
+  - `setRGBL(PARAMS p, Byte r, Byte g, Byte b, Byte l)`
+  - `setBackLightWithAudio(PARAMS p, Byte r, Byte g, Byte b, Byte l, Byte[] AudioData)`
+- **Struct** `CheckSum` - 1 methods, 0 properties
+- **Struct** `Color` - 1 methods, 0 properties
+- **Enum** `COMMAND` - 1 methods, 0 properties
+- **Enum** `COMMAND` - 1 methods, 0 properties
+- **Enum** `Device_Info` - 1 methods, 0 properties
+- **Enum** `Fan_Ctrl` - 1 methods, 0 properties
+- **Class** `GlobalVars` - 1 methods, 4 properties
+- **Class** `Item` - 2 methods, 9 properties
+  - `OnPropertyChanged(String propertyName)`
+- **Enum** `Keyboard_Light` - 1 methods, 0 properties
+- **Enum** `Keyboard_Light12` - 1 methods, 0 properties
+- **Enum** `Keyboard_Light34` - 1 methods, 0 properties
+- **Class** `Light` - 2 methods, 7 properties
+  - `OnPropertyChanged(String propertyName)`
+- **Class** `Light_Infinix` - 1 methods, 4 properties
+- **Enum** `Logo_Light` - 1 methods, 0 properties
+- **Struct** `Other` - 1 methods, 0 properties
+- **Struct** `outerstruct` - 1 methods, 0 properties
+- **Struct** `PARAMS` - 1 methods, 0 properties
+- **Struct** `PARAMS` - 1 methods, 0 properties
+- **Enum** `Periph_Ctrl` - 1 methods, 0 properties
+- **Struct** `PositionCMD` - 1 methods, 0 properties
+- **Struct** `PositionSize` - 1 methods, 0 properties
+- **Enum** `RXField` - 1 methods, 0 properties
+- **Enum** `Side_Light` - 1 methods, 0 properties
+- **Struct** `txBuF` - 1 methods, 0 properties
+- **Class** `TxBuf` - 30 methods, 0 properties
+  - `SetbitValue(Byte data, Int32 index, Boolean flag)`
+  - `GetByte(Byte data, Int32 index, Byte count)`
+  - `SetByte(Int32 value, Byte data, Byte index, Byte count)`
+  - `TestBit(Byte data, Int32 index)`
+  - `SetBit(Boolean value, Byte data, Byte index, Byte count)`
+  - `TypeFlagsAudio(Byte flags, Int32 index)`
+  - `TenToTwo(Int32 value)`
+  - `setID(txBuF setID)`
+  - `setCommand(COMMAND arg, txBuF setCMD)`
+  - `setAction(ACTION arg, txBuF setAction)`
+  - `setParams(Int32 arg, txBuF setParams)`
+  - `setDataRGBL(Byte R, Byte G, Byte B, Byte L, txBuF setRGBL)`
+  - `setDataSize(Byte size, txBuF setDataSize)`
+  - `clearData(txBuF setDataSize)`
+  - `setCheckSum(txBuF setCheckSum)`
+  - `getUSBFiled(RXField field)`
+  - `send()`
+  - `on_setKeyboardSave()`
+  - `on_getVersion()`
+  - `On_ChatEC_setKeyboardLED(txBuF setKeyboardLED, Byte R, Byte G, Byte B, Byte L)`
+  - `on_setKeyboardLED(Keyboard_Light state, Byte R, Byte G, Byte B, Byte L)`
+  - `on_setKeyboard12LED(Keyboard_Light12 state, Byte R, Byte G, Byte B, Byte L)`
+  - `on_setKeyboard34LED(Keyboard_Light34 state, Byte R, Byte G, Byte B, Byte L)`
+  - `on_setLogoLED(Logo_Light state, Byte R, Byte G, Byte B, Byte L)`
+  - `on_setCircleLED(Side_Light state, Byte R, Byte G, Byte B, Byte L)`
+  - `on_setFanControl(Fan_Ctrl state)`
+  - `on_setPraphicsControl(Periph_Ctrl state, Byte R, Byte G, Byte B, Byte L)`
+  - `on_setDeviceInfo(Device_Info state, Byte R, Byte G, Byte B, Byte L)`
+  - `on_setKeyboardLightState(Keyboard_Light state)`
+- **Struct** `union` - 1 methods, 0 properties
+- **Struct** `unionCMD` - 1 methods, 0 properties
+- **Struct** `unionData` - 1 methods, 0 properties
+- **Struct** `unionReserved` - 1 methods, 0 properties
+- **Struct** `unionSize` - 1 methods, 0 properties
+
+## Namespace: `BydCentral.Core.Services`
+
+- **Struct** `downFileVersionInfo` - 1 methods, 0 properties
+- **Interface** `IclientRequest` - 12 methods, 0 properties
+  - `checkLoadUpdate()`
+  - `checkUpdateServer()`
+  - `getGerverVersionMap(String fileType)`
+  - `getLocalVersionMap(String fileType)`
+  - `getAllLoacalVersionMap()`
+  - `getAllLoacalNameMap()`
+  - `DownloadFile(String fileType, String version, Int32 value)`
+  - `getAppVersion()`
+  - `UpdateAPP()`
+  - `Compare(String version1, String version2)`
+  - `DeleteAllFile()`
+  - `OpenLocalFile()`
+- **Interface** `IPopupWindowService` - 3 methods, 0 properties
+  - `ShowPopup()`
+  - `ClosePopup()`
+  - `HidePopup()`
+- **Interface** `IUSBServices` - 5 methods, 0 properties
+  - `InitUsb(Int32 pid, Int32 vid)`
+  - `SendData(IUsbDevice device, Byte[] data, Int32& bytes, Error& error)`
+  - `ReceiveData(IUsbDevice device, Byte[] indata, Byte[]& data, Int32& bytes, Error& error)`
+  - `SendData2(Byte[] data, Int32& bytes, Error& error)`
+  - `ReceiveData2(Byte[] indata, Byte[]& data, Int32& bytes, Error& error)`
+- **Interface** `IWin32` - 24 methods, 0 properties
+  - `ToGB(Double size, Double mod)`
+  - `GetDiskName()`
+  - `GetDiskSize()`
+  - `GetDiskOP()`
+  - `GetDiskUesd()`
+  - `GetMemoryName()`
+  - `GetMemorySize()`
+  - `GetMemoryAvailable()`
+  - `GetCPUName()`
+  - `GetCPUOP(Int32 Step)`
+  - `GetGPUName()`
+  - `GetGPUOP()`
+  - `GetBattery()`
+  - `GetBatteryStatus()`
+  - `Hook_Start()`
+  - `Hook_Clear()`
+  - `GetCpuFrequency()`
+  - `GetGpuFrequency()`
+  - `GetCpuMaxFrequency()`
+  - `GetGpuMaxFrequency()`
+  - `getNVGPUclk()`
+  - `getNVGPUMaxFrequency()`
+  - `getNVTem()`
+  - `getCom()`
+- **Interface** `IWmi` - 27 methods, 0 properties
+  - `WmiMethod(String mScope, String className, String methodName, String inParams, Object InData, String outParams)`
+  - `getSSID()`
+  - `GetCPUTem()`
+  - `GetGPUTem()`
+  - `getCPUFan()`
+  - `getGPUFan()`
+  - `setQMode()`
+  - `setBMode()`
+  - `setGMode()`
+  - `setBEMode()`
+  - `queryMode()`
+  - `setUSBChg(Boolean isEnable)`
+  - `getUSBChg()`
+  - `setGPUMode(Int32 whichMode)`
+  - `GetGPUMode()`
+  - `getNVGPU()`
+  - `getIGPU()`
+  - `getGPUFanMax()`
+  - `getCPUFanMax()`
+  - `getBIOSver()`
+  - `getECVer()`
+  - `getSoundVer()`
+  - `GetFanFullMode()`
+  - `FanFullMode()`
+  - `disFanFullMode()`
+  - `getSkuId()`
+  - `getPhase()`
+- **Class** `LoggerHelper` - 13 methods, 1 properties
+  - `Debug(String msg)`
+  - `Debug(String msg, Exception err)`
+  - `Info(String msg)`
+  - `Info(String msg, Exception err)`
+  - `Warn(String msg)`
+  - `Warn(String msg, Exception err)`
+  - `Trace(String msg)`
+  - `Trace(String msg, Exception err)`
+  - `Error(String msg)`
+  - `Error(String msg, Exception err)`
+  - `Fatal(String msg)`
+  - `Fatal(String msg, Exception err)`
+- **Class** `Usb` - 12 methods, 0 properties
+  - `InitUsb(Int32 pid, Int32 vid)`
+  - `InitUsb()`
+  - `OpenUsb()`
+  - `CloseUsb()`
+  - `GetData(Byte[] data)`
+  - `SendData2(Byte[] data, Int32& bytes, Error& error)`
+  - `ReceiveData2(Byte[] indata, Byte[]& data, Int32& bytes, Error& error)`
+  - `SendData(IUsbDevice device, Byte[] data, Int32& bytes, Error& error)`
+  - `ReceiveData(IUsbDevice device, Byte[] indata, Byte[]& data, Int32& bytes, Error& error)`
+  - `writeUsbFan(Object mode, TxBuf txBufClass, txBuF txBufStruct)`
+- **Class** `WinRing0_IO` - 6 methods, 0 properties
+  - `Initialize()`
+  - `IndexIO_GetRegValue(UInt16 address, Byte offset)`
+  - `IndexIO_SetRegValue(UInt16 address, Byte offset, Byte value)`
+  - `Write_EC(Byte command, Byte value)`
+  - `Read_EC(Byte command)`
+
+## Namespace: `BydCentral.Core.ViewModels`
+
+- **Class** `DelegateCommand` - 3 methods, 2 properties
+  - `Execute(Object parameter)`
+  - `CanExecute(Object parameter)`
+- **Class** `MainViewModel` - 3 methods, 2 properties
+  - `Message(Object obj, String message)`
+  - `RunTest(Object obj)`
+- **Class** `NotifyIconViewModel` - 1 methods, 3 properties
+- **Class** `Page1ViewModel` - 30 methods, 30 properties
+  - `SetInitInfo()`
+  - `GetFanMax()`
+  - `SetCpuMaxFrequency()`
+  - `SetGpuMaxFrequency()`
+  - `SetQMode()`
+  - `SetBMode()`
+  - `SetGMode()`
+  - `GetCpuUsageAsync()`
+  - `GetSystemMode(CancellationToken cancellationToken)`
+  - `ExecuteAsync(CancellationToken cancellationToken)`
+- **Class** `Page2ViewModel` - 5 methods, 6 properties
+  - `GetStatus()`
+  - `InitPage2()`
+  - `SetModeDefaultOrNot()`
+  - `GetCOM()`
+- **Class** `Page3ViewModel` - 13 methods, 14 properties
+  - `GetComboBoxDemoDataList()`
+  - `setBattery(CancellationToken cancellationToken)`
+  - `setWinkeyLock(Boolean flag)`
+  - `setFullFan(Boolean flag)`
+  - `setUsbCharge(Boolean flag)`
+  - `setDisplay(String flag)`
+  - `setVersion()`
+  - `GetGpuMode()`
+  - `GetInfo()`
+- **Class** `Page4ViewModel` - 12 methods, 14 properties
+  - `AddItem(Item item)`
+  - `AddFwItems(Item item)`
+  - `setVersion()`
+  - `CheckUpdate()`
+  - `Update(String fileType)`
+  - `CheckNowVersion()`
+  - `CheckBackup()`
+  - `Driver(String name)`
+
+## Namespace: `BydCentral.Services`
+
+- **Class** `AppControl` - 21 methods, 4 properties
+  - `WritePrivateProfileString(String section, String key, String val, String filePath)`
+  - `GetPrivateProfileString(String section, String key, String def, StringBuilder retVal, Int32 size, String filePath)`
+  - `CreateIniFile()`
+  - `GetPath()`
+  - `INIWrite(String section, String key, String value)`
+  - `INIRead(String section, String key)`
+  - `INIDelete(String FilePath)`
+  - `SetMeAutoStart(Boolean onOff)`
+  - `CreateShortcut(String directory, String shortcutName, String targetPath, String description, String iconLocation)`
+  - `GetQuickFromFolder(String directory, String targetPath)`
+  - `GetAppPathFromQuick(String shortcutPath)`
+  - `DeleteFile(String path)`
+  - `CreateDesktopQuick(String desktopPath, String quickName, String appPath)`
+  - `SetMeAutoStartRegistry(Boolean onOff)`
+  - `SetAutoStart(Boolean onOff, String appName, String appPath)`
+  - `IsExistKey(String keyName)`
+  - `SelfRunning(Boolean isStart, String exeName, String path)`
+  - `setAutoTask(Boolean autoTask)`
+  - `CreateTask()`
+  - `delTask()`
+
+## Namespace: `IWshRuntimeLibrary`
+
+- **Interface** `IWshShell` - 0 methods, 0 properties
+- **Interface** `IWshShell2` - 0 methods, 0 properties
+- **Interface** `IWshShell3` - 2 methods, 0 properties
+  - `_VtblGap1_4()`
+  - `CreateShortcut(String PathLink)`
+- **Interface** `IWshShortcut` - 5 methods, 6 properties
+  - `_VtblGap1_2()`
+  - `_VtblGap2_2()`
+  - `_VtblGap3_1()`
+  - `_VtblGap4_1()`
+  - `Save()`
+- **Interface** `WshShell` - 0 methods, 0 properties
+
+## Namespace: `Microsoft.CodeAnalysis`
+
+- **Class** `EmbeddedAttribute` - 1 methods, 0 properties
+
+## Namespace: `OpenLibSys`
+
+- **Delegate** `_Cpuid` - 4 methods, 0 properties
+  - `Invoke(UInt32 index, UInt32& eax, UInt32& ebx, UInt32& ecx, UInt32& edx)`
+  - `BeginInvoke(UInt32 index, UInt32& eax, UInt32& ebx, UInt32& ecx, UInt32& edx, AsyncCallback callback, Object object)`
+  - `EndInvoke(UInt32& eax, UInt32& ebx, UInt32& ecx, UInt32& edx, IAsyncResult result)`
+- **Delegate** `_CpuidPx` - 4 methods, 0 properties
+  - `Invoke(UInt32 index, UInt32& eax, UInt32& ebx, UInt32& ecx, UInt32& edx, UIntPtr processAffinityMask)`
+  - `BeginInvoke(UInt32 index, UInt32& eax, UInt32& ebx, UInt32& ecx, UInt32& edx, UIntPtr processAffinityMask, AsyncCallback callback, Object object)`
+  - `EndInvoke(UInt32& eax, UInt32& ebx, UInt32& ecx, UInt32& edx, IAsyncResult result)`
+- **Delegate** `_CpuidTx` - 4 methods, 0 properties
+  - `Invoke(UInt32 index, UInt32& eax, UInt32& ebx, UInt32& ecx, UInt32& edx, UIntPtr threadAffinityMask)`
+  - `BeginInvoke(UInt32 index, UInt32& eax, UInt32& ebx, UInt32& ecx, UInt32& edx, UIntPtr threadAffinityMask, AsyncCallback callback, Object object)`
+  - `EndInvoke(UInt32& eax, UInt32& ebx, UInt32& ecx, UInt32& edx, IAsyncResult result)`
+- **Delegate** `_DeinitializeOls` - 4 methods, 0 properties
+  - `Invoke()`
+  - `BeginInvoke(AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_FindPciDeviceByClass` - 4 methods, 0 properties
+  - `Invoke(Byte baseClass, Byte subClass, Byte programIf, Byte index)`
+  - `BeginInvoke(Byte baseClass, Byte subClass, Byte programIf, Byte index, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_FindPciDeviceById` - 4 methods, 0 properties
+  - `Invoke(UInt16 vendorId, UInt16 deviceId, Byte index)`
+  - `BeginInvoke(UInt16 vendorId, UInt16 deviceId, Byte index, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_GetDllStatus` - 4 methods, 0 properties
+  - `Invoke()`
+  - `BeginInvoke(AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_GetDllVersion` - 4 methods, 0 properties
+  - `Invoke(Byte& major, Byte& minor, Byte& revision, Byte& release)`
+  - `BeginInvoke(Byte& major, Byte& minor, Byte& revision, Byte& release, AsyncCallback callback, Object object)`
+  - `EndInvoke(Byte& major, Byte& minor, Byte& revision, Byte& release, IAsyncResult result)`
+- **Delegate** `_GetDriverType` - 4 methods, 0 properties
+  - `Invoke()`
+  - `BeginInvoke(AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_GetDriverVersion` - 4 methods, 0 properties
+  - `Invoke(Byte& major, Byte& minor, Byte& revision, Byte& release)`
+  - `BeginInvoke(Byte& major, Byte& minor, Byte& revision, Byte& release, AsyncCallback callback, Object object)`
+  - `EndInvoke(Byte& major, Byte& minor, Byte& revision, Byte& release, IAsyncResult result)`
+- **Delegate** `_Hlt` - 4 methods, 0 properties
+  - `Invoke()`
+  - `BeginInvoke(AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_HltPx` - 4 methods, 0 properties
+  - `Invoke(UIntPtr processAffinityMask)`
+  - `BeginInvoke(UIntPtr processAffinityMask, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_HltTx` - 4 methods, 0 properties
+  - `Invoke(UIntPtr threadAffinityMask)`
+  - `BeginInvoke(UIntPtr threadAffinityMask, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_InitializeOls` - 4 methods, 0 properties
+  - `Invoke()`
+  - `BeginInvoke(AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_IsCpuid` - 4 methods, 0 properties
+  - `Invoke()`
+  - `BeginInvoke(AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_IsMsr` - 4 methods, 0 properties
+  - `Invoke()`
+  - `BeginInvoke(AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_IsTsc` - 4 methods, 0 properties
+  - `Invoke()`
+  - `BeginInvoke(AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_Rdmsr` - 4 methods, 0 properties
+  - `Invoke(UInt32 index, UInt32& eax, UInt32& edx)`
+  - `BeginInvoke(UInt32 index, UInt32& eax, UInt32& edx, AsyncCallback callback, Object object)`
+  - `EndInvoke(UInt32& eax, UInt32& edx, IAsyncResult result)`
+- **Delegate** `_RdmsrPx` - 4 methods, 0 properties
+  - `Invoke(UInt32 index, UInt32& eax, UInt32& edx, UIntPtr processAffinityMask)`
+  - `BeginInvoke(UInt32 index, UInt32& eax, UInt32& edx, UIntPtr processAffinityMask, AsyncCallback callback, Object object)`
+  - `EndInvoke(UInt32& eax, UInt32& edx, IAsyncResult result)`
+- **Delegate** `_RdmsrTx` - 4 methods, 0 properties
+  - `Invoke(UInt32 index, UInt32& eax, UInt32& edx, UIntPtr threadAffinityMask)`
+  - `BeginInvoke(UInt32 index, UInt32& eax, UInt32& edx, UIntPtr threadAffinityMask, AsyncCallback callback, Object object)`
+  - `EndInvoke(UInt32& eax, UInt32& edx, IAsyncResult result)`
+- **Delegate** `_Rdpmc` - 4 methods, 0 properties
+  - `Invoke(UInt32 index, UInt32& eax, UInt32& edx)`
+  - `BeginInvoke(UInt32 index, UInt32& eax, UInt32& edx, AsyncCallback callback, Object object)`
+  - `EndInvoke(UInt32& eax, UInt32& edx, IAsyncResult result)`
+- **Delegate** `_RdpmcPx` - 4 methods, 0 properties
+  - `Invoke(UInt32 index, UInt32& eax, UInt32& edx, UIntPtr processAffinityMask)`
+  - `BeginInvoke(UInt32 index, UInt32& eax, UInt32& edx, UIntPtr processAffinityMask, AsyncCallback callback, Object object)`
+  - `EndInvoke(UInt32& eax, UInt32& edx, IAsyncResult result)`
+- **Delegate** `_RdpmcTx` - 4 methods, 0 properties
+  - `Invoke(UInt32 index, UInt32& eax, UInt32& edx, UIntPtr threadAffinityMask)`
+  - `BeginInvoke(UInt32 index, UInt32& eax, UInt32& edx, UIntPtr threadAffinityMask, AsyncCallback callback, Object object)`
+  - `EndInvoke(UInt32& eax, UInt32& edx, IAsyncResult result)`
+- **Delegate** `_Rdtsc` - 4 methods, 0 properties
+  - `Invoke(UInt32& eax, UInt32& edx)`
+  - `BeginInvoke(UInt32& eax, UInt32& edx, AsyncCallback callback, Object object)`
+  - `EndInvoke(UInt32& eax, UInt32& edx, IAsyncResult result)`
+- **Delegate** `_RdtscPx` - 4 methods, 0 properties
+  - `Invoke(UInt32& eax, UInt32& edx, UIntPtr processAffinityMask)`
+  - `BeginInvoke(UInt32& eax, UInt32& edx, UIntPtr processAffinityMask, AsyncCallback callback, Object object)`
+  - `EndInvoke(UInt32& eax, UInt32& edx, IAsyncResult result)`
+- **Delegate** `_RdtscTx` - 4 methods, 0 properties
+  - `Invoke(UInt32& eax, UInt32& edx, UIntPtr threadAffinityMask)`
+  - `BeginInvoke(UInt32& eax, UInt32& edx, UIntPtr threadAffinityMask, AsyncCallback callback, Object object)`
+  - `EndInvoke(UInt32& eax, UInt32& edx, IAsyncResult result)`
+- **Delegate** `_ReadIoPortByte` - 4 methods, 0 properties
+  - `Invoke(UInt16 port)`
+  - `BeginInvoke(UInt16 port, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_ReadIoPortByteEx` - 4 methods, 0 properties
+  - `Invoke(UInt16 port, Byte& value)`
+  - `BeginInvoke(UInt16 port, Byte& value, AsyncCallback callback, Object object)`
+  - `EndInvoke(Byte& value, IAsyncResult result)`
+- **Delegate** `_ReadIoPortDword` - 4 methods, 0 properties
+  - `Invoke(UInt16 port)`
+  - `BeginInvoke(UInt16 port, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_ReadIoPortDwordEx` - 4 methods, 0 properties
+  - `Invoke(UInt16 port, UInt32& value)`
+  - `BeginInvoke(UInt16 port, UInt32& value, AsyncCallback callback, Object object)`
+  - `EndInvoke(UInt32& value, IAsyncResult result)`
+- **Delegate** `_ReadIoPortWord` - 4 methods, 0 properties
+  - `Invoke(UInt16 port)`
+  - `BeginInvoke(UInt16 port, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_ReadIoPortWordEx` - 4 methods, 0 properties
+  - `Invoke(UInt16 port, UInt16& value)`
+  - `BeginInvoke(UInt16 port, UInt16& value, AsyncCallback callback, Object object)`
+  - `EndInvoke(UInt16& value, IAsyncResult result)`
+- **Delegate** `_ReadPciConfigByte` - 4 methods, 0 properties
+  - `Invoke(UInt32 pciAddress, Byte regAddress)`
+  - `BeginInvoke(UInt32 pciAddress, Byte regAddress, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_ReadPciConfigByteEx` - 4 methods, 0 properties
+  - `Invoke(UInt32 pciAddress, UInt32 regAddress, Byte& value)`
+  - `BeginInvoke(UInt32 pciAddress, UInt32 regAddress, Byte& value, AsyncCallback callback, Object object)`
+  - `EndInvoke(Byte& value, IAsyncResult result)`
+- **Delegate** `_ReadPciConfigDword` - 4 methods, 0 properties
+  - `Invoke(UInt32 pciAddress, Byte regAddress)`
+  - `BeginInvoke(UInt32 pciAddress, Byte regAddress, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_ReadPciConfigDwordEx` - 4 methods, 0 properties
+  - `Invoke(UInt32 pciAddress, UInt32 regAddress, UInt32& value)`
+  - `BeginInvoke(UInt32 pciAddress, UInt32 regAddress, UInt32& value, AsyncCallback callback, Object object)`
+  - `EndInvoke(UInt32& value, IAsyncResult result)`
+- **Delegate** `_ReadPciConfigWord` - 4 methods, 0 properties
+  - `Invoke(UInt32 pciAddress, Byte regAddress)`
+  - `BeginInvoke(UInt32 pciAddress, Byte regAddress, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_ReadPciConfigWordEx` - 4 methods, 0 properties
+  - `Invoke(UInt32 pciAddress, UInt32 regAddress, UInt16& value)`
+  - `BeginInvoke(UInt32 pciAddress, UInt32 regAddress, UInt16& value, AsyncCallback callback, Object object)`
+  - `EndInvoke(UInt16& value, IAsyncResult result)`
+- **Delegate** `_SetPciMaxBusIndex` - 4 methods, 0 properties
+  - `Invoke(Byte max)`
+  - `BeginInvoke(Byte max, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_WriteIoPortByte` - 4 methods, 0 properties
+  - `Invoke(UInt16 port, Byte value)`
+  - `BeginInvoke(UInt16 port, Byte value, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_WriteIoPortByteEx` - 4 methods, 0 properties
+  - `Invoke(UInt16 port, Byte value)`
+  - `BeginInvoke(UInt16 port, Byte value, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_WriteIoPortDword` - 4 methods, 0 properties
+  - `Invoke(UInt16 port, UInt32 value)`
+  - `BeginInvoke(UInt16 port, UInt32 value, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_WriteIoPortDwordEx` - 4 methods, 0 properties
+  - `Invoke(UInt16 port, UInt32 value)`
+  - `BeginInvoke(UInt16 port, UInt32 value, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_WriteIoPortWord` - 4 methods, 0 properties
+  - `Invoke(UInt16 port, UInt16 value)`
+  - `BeginInvoke(UInt16 port, UInt16 value, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_WriteIoPortWordEx` - 4 methods, 0 properties
+  - `Invoke(UInt16 port, UInt16 value)`
+  - `BeginInvoke(UInt16 port, UInt16 value, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_WritePciConfigByte` - 4 methods, 0 properties
+  - `Invoke(UInt32 pciAddress, Byte regAddress, Byte value)`
+  - `BeginInvoke(UInt32 pciAddress, Byte regAddress, Byte value, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_WritePciConfigByteEx` - 4 methods, 0 properties
+  - `Invoke(UInt32 pciAddress, UInt32 regAddress, Byte value)`
+  - `BeginInvoke(UInt32 pciAddress, UInt32 regAddress, Byte value, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_WritePciConfigDword` - 4 methods, 0 properties
+  - `Invoke(UInt32 pciAddress, Byte regAddress, UInt32 value)`
+  - `BeginInvoke(UInt32 pciAddress, Byte regAddress, UInt32 value, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_WritePciConfigDwordEx` - 4 methods, 0 properties
+  - `Invoke(UInt32 pciAddress, UInt32 regAddress, UInt32 value)`
+  - `BeginInvoke(UInt32 pciAddress, UInt32 regAddress, UInt32 value, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_WritePciConfigWord` - 4 methods, 0 properties
+  - `Invoke(UInt32 pciAddress, Byte regAddress, UInt16 value)`
+  - `BeginInvoke(UInt32 pciAddress, Byte regAddress, UInt16 value, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_WritePciConfigWordEx` - 4 methods, 0 properties
+  - `Invoke(UInt32 pciAddress, UInt32 regAddress, UInt16 value)`
+  - `BeginInvoke(UInt32 pciAddress, UInt32 regAddress, UInt16 value, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_Wrmsr` - 4 methods, 0 properties
+  - `Invoke(UInt32 index, UInt32 eax, UInt32 edx)`
+  - `BeginInvoke(UInt32 index, UInt32 eax, UInt32 edx, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_WrmsrPx` - 4 methods, 0 properties
+  - `Invoke(UInt32 index, UInt32 eax, UInt32 edx, UIntPtr processAffinityMask)`
+  - `BeginInvoke(UInt32 index, UInt32 eax, UInt32 edx, UIntPtr processAffinityMask, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Delegate** `_WrmsrTx` - 4 methods, 0 properties
+  - `Invoke(UInt32 index, UInt32 eax, UInt32 edx, UIntPtr threadAffinityMask)`
+  - `BeginInvoke(UInt32 index, UInt32 eax, UInt32 edx, UIntPtr threadAffinityMask, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Class** `Ols` - 11 methods, 0 properties
+  - `PciBusDevFunc(UInt32 bus, UInt32 dev, UInt32 func)`
+  - `PciGetBus(UInt32 address)`
+  - `PciGetDev(UInt32 address)`
+  - `PciGetFunc(UInt32 address)`
+  - `LoadLibrary(String lpFileName)`
+  - `FreeLibrary(IntPtr hModule)`
+  - `GetProcAddress(IntPtr hModule, String lpProcName)`
+  - `GetStatus()`
+  - `Dispose()`
+  - `GetDelegate(String procName, Type delegateType)`
+- **Enum** `OlsDllStatus` - 1 methods, 0 properties
+- **Enum** `OlsDriverType` - 1 methods, 0 properties
+- **Enum** `OlsErrorPci` - 1 methods, 0 properties
+- **Enum** `Status` - 1 methods, 0 properties
+
+## Namespace: `System.Runtime.CompilerServices`
+
+- **Class** `NullableAttribute` - 2 methods, 0 properties
+- **Class** `NullableContextAttribute` - 1 methods, 0 properties
+

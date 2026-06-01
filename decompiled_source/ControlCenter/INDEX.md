@@ -1,0 +1,622 @@
+# ControlCenter.dll - Decompiled Source Index
+
+- **Assembly**: ControlCenter.dll
+- **Types**: 59
+- **Total Methods**: 605
+
+## Namespace: `<global>`
+
+- **Struct** `__StaticArrayInitTypeSize=24` - 1 methods, 0 properties
+
+## Namespace: `BydCentral`
+
+- **Class** `App` - 31 methods, 2 properties
+  - `RunningInstance()`
+  - `MonitorSharedData()`
+  - `ExecuteMethod(Int32 value)`
+  - `IncreaseSharedData()`
+  - `App_Startup(Object sender, StartupEventArgs e)`
+  - `App_DispatcherUnhandledException(Object sender, DispatcherUnhandledExceptionEventArgs e)`
+  - `CurrentDomain_UnhandledException(Object sender, UnhandledExceptionEventArgs e)`
+  - `TaskScheduler_UnobservedTaskException(Object sender, UnobservedTaskExceptionEventArgs e)`
+  - `App_SessionEnding(Object sender, SessionEndingCancelEventArgs e)`
+  - `OnStartup(StartupEventArgs e)`
+  - `InitLanguage()`
+  - `GetServices()`
+  - `OnExit(ExitEventArgs e)`
+  - `ExecuteCustomMethod()`
+  - `TaskbarIcon_TrayMouseDoubleClick(Object sender, MouseEventArgs e)`
+  - `createNotifyIcon()`
+  - `contextMenu()`
+  - `Language_SelectedChanged(Object sender, EventArgs e, ToolStripMenuItem menuItem, UInt32 temp, ToolStripMenuItem a, ToolStripMenuItem b, ToolStripMenuItem c, ToolStripMenuItem d, ToolStripMenuItem f)`
+  - `UpdateUI()`
+  - `getAutoStartStatus()`
+  - `AutoStartMenuItem_Click(Object sender, EventArgs e)`
+  - `zh_cn_Item_Click(Object sender, EventArgs e)`
+  - `en_Item_Click(Object sender, EventArgs e)`
+  - `fr_Item_Click(Object sender, EventArgs e)`
+  - `th_Item_Click(Object sender, EventArgs e)`
+  - `showMenuItem_Click(Object sender, EventArgs e)`
+  - `exitMenuItem_Click(Object sender, EventArgs e)`
+  - `InitializeComponent()`
+  - `Main()`
+- **Struct** `DEVICE_NOTIFY_SUBSCRIBE_PARAMETERS` - 1 methods, 0 properties
+- **Delegate** `DeviceNotifyCallbackRoutine` - 4 methods, 0 properties
+  - `Invoke(IntPtr context, Int32 type, IntPtr setting)`
+  - `BeginInvoke(IntPtr context, Int32 type, IntPtr setting, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Class** `MainWindow` - 32 methods, 0 properties
+  - `GCCollect()`
+  - `MainWindow_Unloaded(Object sender, RoutedEventArgs e)`
+  - `SuspendAndResume(Object obj, String msg)`
+  - `Page1Button_Click(Object sender, RoutedEventArgs e)`
+  - `Page2Button_Click(Object sender, RoutedEventArgs e)`
+  - `Page3Button_Click(Object sender, RoutedEventArgs e)`
+  - `Page4Button_Click(Object sender, RoutedEventArgs e)`
+  - `Window_Loaded(Object sender, RoutedEventArgs e)`
+  - `Grid_MouseLeftButtonDown(Object sender, MouseButtonEventArgs e)`
+  - `Window_Closing(Object sender, CancelEventArgs e)`
+  - `HandleShortcut()`
+  - `Grid_PreviewTouchDown(Object sender, TouchEventArgs e)`
+  - `Button_Click(Object sender, RoutedEventArgs e)`
+  - `Button_Click_1(Object sender, RoutedEventArgs e)`
+  - `Window_SizeChanged(Object sender, SizeChangedEventArgs e)`
+  - `MainWindow_StateChanged(Object sender, EventArgs e)`
+  - `TaskbarIcon_TrayMouseDoubleClick(Object sender, RoutedEventArgs e)`
+  - `RegisterHotKey(IntPtr hWnd, Int32 id, ModifierKeys fsModifuers, Int32 vk)`
+  - `UnregisterHotKey(IntPtr hWnd, Int32 id)`
+  - `OnSourceInitialized(EventArgs e)`
+  - `registerKey()`
+  - `HwndHook(IntPtr hwnd, Int32 msg, IntPtr wParam, IntPtr lParam, Boolean& handled)`
+  - `OnClosed(EventArgs e)`
+  - `Dispose()`
+  - `DeviceNotifyCallback(IntPtr context, Int32 type, IntPtr setting)`
+  - `PowerRegisterSuspendResumeNotification(UInt32 flags, DEVICE_NOTIFY_SUBSCRIBE_PARAMETERS& receipient, IntPtr& registrationHandle)`
+  - `InitializeComponent()`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+
+## Namespace: `BydCentral.CustomControl`
+
+- **Class** `Fan` - 4 methods, 1 properties
+  - `InitializeComponent()`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+- **Class** `MonitorItem` - 4 methods, 4 properties
+  - `InitializeComponent()`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+
+## Namespace: `BydCentral.CustomControl.CustomUserControl`
+
+- **Class** `ColorPanelUnabled` - 3 methods, 0 properties
+  - `InitializeComponent()`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+- **Class** `KeyboardButton` - 4 methods, 0 properties
+  - `PathContainer_MouseLeftButtonDown(Object sender, MouseButtonEventArgs e)`
+  - `InitializeComponent()`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+- **Class** `Settings` - 15 methods, 3 properties
+  - `OnBatModePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)`
+  - `batChanged()`
+  - `MapToRange(Double value, Double minSource, Double maxSource, Double minTarget, Double maxTarget)`
+  - `OnChargeModePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)`
+  - `chargChanged()`
+  - `OnOutputModePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)`
+  - `outputChanged()`
+  - `dgpuOnlyOutput()`
+  - `mixOutput()`
+  - `dgpuOffOutput()`
+  - `SettingsLoad()`
+  - `InitializeComponent()`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+- **Class** `Settings_Dark` - 15 methods, 3 properties
+  - `OnBatModePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)`
+  - `batChanged()`
+  - `MapToRange(Double value, Double minSource, Double maxSource, Double minTarget, Double maxTarget)`
+  - `OnChargeModePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)`
+  - `chargChanged()`
+  - `OnOutputModePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)`
+  - `outputChanged()`
+  - `dgpuOnlyOutput()`
+  - `mixOutput()`
+  - `dgpuOffOutput()`
+  - `SettingsLoad()`
+  - `InitializeComponent()`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+
+## Namespace: `BydCentral.CustomControl.Helper`
+
+- **Class** `GridHelpers` - 6 methods, 0 properties
+  - `GetAutoFontSize(DependencyObject obj)`
+  - `SetAutoFontSize(DependencyObject obj, Boolean value)`
+  - `OnAutoFontSizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)`
+  - `Element_SizeChanged(Object sender, SizeChangedEventArgs e)`
+  - `AdjustFontSize(FrameworkElement element)`
+- **Class** `MultiRegionHelper` - 7 methods, 0 properties
+  - `GetIrregularRegions(DependencyObject obj)`
+  - `SetIrregularRegions(DependencyObject obj, Geometry[] value)`
+  - `GetClickHandlers(DependencyObject obj)`
+  - `SetClickHandlers(DependencyObject obj, RoutedEventHandler[] value)`
+  - `IrregularRegionsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)`
+  - `Button_MouseLeftButtonDown(Object sender, MouseButtonEventArgs e)`
+
+## Namespace: `BydCentral.CustomControl.Resource`
+
+- **Class** `CustomFan` - 2 methods, 1 properties
+- **Class** `FontSizeConverter` - 3 methods, 0 properties
+  - `Convert(Object value, Type targetType, Object parameter, CultureInfo culture)`
+  - `ConvertBack(Object value, Type targetType, Object parameter, CultureInfo culture)`
+- **Class** `MultiplierConverter` - 3 methods, 0 properties
+  - `Convert(Object value, Type targetType, Object parameter, CultureInfo culture)`
+  - `ConvertBack(Object value, Type targetType, Object parameter, CultureInfo culture)`
+
+## Namespace: `BydCentral.Services`
+
+- **Class** `AppControl` - 21 methods, 4 properties
+  - `WritePrivateProfileString(String section, String key, String val, String filePath)`
+  - `GetPrivateProfileString(String section, String key, String def, StringBuilder retVal, Int32 size, String filePath)`
+  - `CreateIniFile()`
+  - `GetPath()`
+  - `INIWrite(String section, String key, String value)`
+  - `INIRead(String section, String key)`
+  - `INIDelete(String FilePath)`
+  - `SetMeAutoStart(Boolean onOff)`
+  - `CreateShortcut(String directory, String shortcutName, String targetPath, String description, String iconLocation)`
+  - `GetQuickFromFolder(String directory, String targetPath)`
+  - `GetAppPathFromQuick(String shortcutPath)`
+  - `DeleteFile(String path)`
+  - `CreateDesktopQuick(String desktopPath, String quickName, String appPath)`
+  - `SetMeAutoStartRegistry(Boolean onOff)`
+  - `SetAutoStart(Boolean onOff, String appName, String appPath)`
+  - `IsExistKey(String keyName)`
+  - `SelfRunning(Boolean isStart, String exeName, String path)`
+  - `setAutoTask(Boolean autoTask)`
+  - `CreateTask()`
+  - `delTask()`
+- **Class** `AudioCapturer` - 14 methods, 0 properties
+  - `start()`
+  - `stop()`
+  - `Capture_DataAvailable(Object sender, WaveInEventArgs e)`
+  - `ByteToFile(Double[] byteArray, String fileName)`
+  - `DataTimer_Tick()`
+  - `DataProcess(Byte cmd, Byte[] r, Byte[] g, Byte[] b, Byte speed, Byte[] br, Byte[] AudioData)`
+  - `OnDeviceStateChanged(String deviceId, DeviceState newState)`
+  - `OnDeviceAdded(String pwstrDeviceId)`
+  - `OnDeviceRemoved(String deviceId)`
+  - `ChangeCaptureClient()`
+  - `OnDefaultDeviceChanged(DataFlow flow, Role role, String defaultDeviceId)`
+  - `OnPropertyValueChanged(String pwstrDeviceId, PropertyKey key)`
+- **Class** `clientRequest` - 45 methods, 0 properties
+  - `RemoteCertificateValidate(Object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors error)`
+  - `getVbiosVer()`
+  - `getSKU()`
+  - `getAllDriverVersion()`
+  - `getDriverVersion(String name)`
+  - `getLocation()`
+  - `getConfig()`
+  - `getFileType()`
+  - `getExistedVersion(String PCTypeNum, String FileType)`
+  - `GetFileHash(FileTranslation fileInfo)`
+  - `createSha256(String filePath)`
+  - `GetFile(FileTranslation fileInfo, Int32 value)`
+  - `GetFileNew(FileTranslation fileInfo, Int32 value)`
+  - `createUpdateFile()`
+  - `checkUpdate()`
+  - `writeConfigNotUpdate(String[] content)`
+  - `getConfigNotUpdate()`
+  - `writeConfigFileType(String[] content, String fileName)`
+  - `getConfigFileType(String fileName)`
+  - `DeleteDirectory(String targetDir)`
+  - `downloadOtherFileWPF(String fileType, String version, Int32 value)`
+  - `getAppVersion()`
+  - `downloadApp(String version)`
+  - `UpdateAPP()`
+  - `updateAppPlan3(String filePath)`
+  - `getServerVersion(String name)`
+  - `checkUpdateServer()`
+  - `updateAll()`
+  - `updateOther(String fileName, String versionSer)`
+  - `DownloadPool(String fileType, String version, Int32 value)`
+  - `DownloadFile(String fileType, String version, Int32 value)`
+  - `checkLoadUpdate()`
+  - `getGerverVersionMap(String fileType)`
+  - `getLocalVersionMap(String fileType)`
+  - `getAllLoacalVersionMap()`
+  - `getAllLoacalNameMap()`
+  - `getAppversion()`
+  - `CompareCor(String s1, String s2)`
+  - `Compare(String version1, String version2)`
+  - `DeleteAllFile()`
+  - `OpenLocalFile()`
+- **Struct** `ConfigInfo` - 1 methods, 0 properties
+- **Struct** `FileTranslation` - 1 methods, 0 properties
+- **Delegate** `HookProc` - 4 methods, 0 properties
+  - `Invoke(Int32 nCode, Int32 wParam, IntPtr lParam)`
+  - `BeginInvoke(Int32 nCode, Int32 wParam, IntPtr lParam, AsyncCallback callback, Object object)`
+  - `EndInvoke(IAsyncResult result)`
+- **Class** `KeyBoardHookStruct` - 1 methods, 0 properties
+- **Class** `LoggerHelper` - 13 methods, 1 properties
+  - `Debug(String msg)`
+  - `Debug(String msg, Exception err)`
+  - `Info(String msg)`
+  - `Info(String msg, Exception err)`
+  - `Warn(String msg)`
+  - `Warn(String msg, Exception err)`
+  - `Trace(String msg)`
+  - `Trace(String msg, Exception err)`
+  - `Error(String msg)`
+  - `Error(String msg, Exception err)`
+  - `Fatal(String msg)`
+  - `Fatal(String msg, Exception err)`
+- **Struct** `PCTypeFileType` - 1 methods, 0 properties
+- **Class** `SecondOrderDynamics` - 2 methods, 0 properties
+  - `Update(Double deltaTime, Double x)`
+- **Class** `SecondOrderDynamicsForArray` - 2 methods, 0 properties
+  - `Update(Double deltaTime, Double[] xs)`
+- **Class** `SerPort` - 8 methods, 0 properties
+  - `Finalize()`
+  - `OpenCom()`
+  - `IsComOpen()`
+  - `CloseCom()`
+  - `DataSendToPorts(Byte[] inData)`
+  - `sendCom(Object back_light_bufStruct)`
+  - `Dispose()`
+- **Struct** `SHA256STR` - 1 methods, 0 properties
+- **Class** `Usb` - 7 methods, 0 properties
+  - `InitUsb(Int32 pid, Int32 vid)`
+  - `SendData2(Byte[] data, Int32& bytes, Error& error)`
+  - `ReceiveData2(Byte[] indata, Byte[]& data, Int32& bytes, Error& error)`
+  - `SendData(IUsbDevice device, Byte[] data, Int32& bytes, Error& error)`
+  - `ReceiveData(IUsbDevice device, Byte[] indata, Byte[]& data, Int32& bytes, Error& error)`
+- **Class** `Visualizer` - 9 methods, 1 properties
+  - `Get2Flag(Int32 num)`
+  - `PushSampleData(Double[] waveData)`
+  - `GetSpectrumData()`
+  - `TakeSpectrumOfFrequency(Double[] spectrum, Double sampleRate, Double frequency)`
+  - `MakeSmooth(Double[] data, Int32 radius)`
+- **Class** `Win32` - 30 methods, 0 properties
+  - `GetBattery()`
+  - `GetBatteryStatus()`
+  - `GetCPUName()`
+  - `GetCPUOP(Int32 Step)`
+  - `GetDiskName()`
+  - `GetDiskOP()`
+  - `GetDiskUesd()`
+  - `GetDiskSize()`
+  - `GetGPUName()`
+  - `GetGPUOP()`
+  - `GetMemoryName()`
+  - `GetMemoryAvailable()`
+  - `GetMemorySize()`
+  - `GetCpuFrequency()`
+  - `GetGpuFrequency()`
+  - `GetCpuMaxFrequency()`
+  - `GetGpuMaxFrequency()`
+  - `ToGB(Double size, Double mod)`
+  - `getNVGPUclk()`
+  - `getNVGPUMaxFrequency()`
+  - `getNVTem()`
+  - `getCom()`
+  - `SetWindowsHookEx(Int32 idHook, HookProc lpfn, IntPtr hInstance, Int32 threadId)`
+  - `UnhookWindowsHookEx(Int32 idHook)`
+  - `CallNextHookEx(Int32 idHook, Int32 nCode, Int32 wParam, IntPtr lParam)`
+  - `GetModuleHandle(String name)`
+  - `KeyBoardHookProc(Int32 nCode, Int32 wParam, IntPtr lParam)`
+  - `Hook_Start()`
+  - `Hook_Clear()`
+- **Class** `Wmi` - 29 methods, 0 properties
+  - `WmiMethod(String mScope, String className, String methodName, String inParams, Object InData, String outParams)`
+  - `getSSID()`
+  - `GetCPUTem()`
+  - `GetGPUTem()`
+  - `setQMode()`
+  - `setBMode()`
+  - `setGMode()`
+  - `setBEMode()`
+  - `queryMode()`
+  - `setUSBChg(Boolean isEnable)`
+  - `getUSBChg()`
+  - `setGPUMode(Int32 whichMode)`
+  - `GetGPUMode()`
+  - `getNVGPU()`
+  - `getIGPU()`
+  - `getCPUFanMax()`
+  - `getGPUFanMax()`
+  - `getCPUFan()`
+  - `getGPUFan()`
+  - `restartComputer()`
+  - `GetFanFullMode()`
+  - `FanFullMode()`
+  - `disFanFullMode()`
+  - `getSkuId()`
+  - `getPhase()`
+  - `getECVer()`
+  - `getSoundVer()`
+  - `getBIOSver()`
+
+## Namespace: `BydCentral.Views`
+
+- **Class** `DebugWindow` - 5 methods, 0 properties
+  - `Button_Click(Object sender, RoutedEventArgs e)`
+  - `Button_Click_1(Object sender, RoutedEventArgs e)`
+  - `InitializeComponent()`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+- **Class** `PopupImageWindow` - 5 methods, 0 properties
+  - `Message(Object obj, String msg)`
+  - `Timer_Tick(Object sender, EventArgs e)`
+  - `InitializeComponent()`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+
+## Namespace: `BydContral`
+
+- **Enum** `BackLightMode` - 1 methods, 0 properties
+- **Struct** `HsvColor` - 1 methods, 3 properties
+- **Enum** `LightMode` - 1 methods, 0 properties
+- **Class** `Page1` - 16 methods, 0 properties
+  - `Message(Object obj, String message)`
+  - `ExecLoad()`
+  - `GetSystemMode()`
+  - `CancelToken()`
+  - `CancelGetSystem()`
+  - `CancelGetInfo()`
+  - `Page_Loaded(Object sender, RoutedEventArgs e)`
+  - `ExecUnload()`
+  - `Page_UnLoaded(Object sender, RoutedEventArgs e)`
+  - `ButtonOffice_Click(Object sender, RoutedEventArgs e)`
+  - `ButtonBalance_Click(Object sender, RoutedEventArgs e)`
+  - `ButtonGaming_Click(Object sender, RoutedEventArgs e)`
+  - `InitializeComponent()`
+  - `_CreateDelegate(Type delegateType, String handler)`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+- **Class** `Page2` - 138 methods, 0 properties
+  - `InitCfg()`
+  - `StartPage2()`
+  - `OnSelectBrushChanged(Object sender, EventArgs e)`
+  - `ColorPanel_MouseLeftButtonUp(Object sender, MouseButtonEventArgs e)`
+  - `DispatcherTimer_Tick(Object sender, EventArgs e)`
+  - `startComTick()`
+  - `InitSwitch()`
+  - `Finalize()`
+  - `Message(Object obj, String msg)`
+  - `ChangeKeyboardSwitch(Object obj, String msg)`
+  - `ChangeBackSwitch(Object obj, String msg)`
+  - `SaveKeyboard(Object obj, String msg)`
+  - `GetVersion()`
+  - `InitLight()`
+  - `InitBoardLight()`
+  - `InitBackLight()`
+  - `CreateOrLoadCfg(String filename)`
+  - `LoadLight(String fp)`
+  - `SaveLightData()`
+  - `LoadFlowColorsFromFile(String relativeResourcePath)`
+  - `ExecLoad()`
+  - `page2Loaded(Object sender, RoutedEventArgs e)`
+  - `ExecUnLoad()`
+  - `page2UnLoaded(Object sender, RoutedEventArgs e)`
+  - `ComThreadFunction()`
+  - `StartAutoEvent()`
+  - `StopAutoEvent()`
+  - `StartManualEvent()`
+  - `StopManualEvent()`
+  - `Keyboard_Click(Object sender, RoutedEventArgs e)`
+  - `back_Click(Object sender, RoutedEventArgs e)`
+  - `ConvertRgbToHsv(Color color)`
+  - `CombineRGBWithBrightness(Int32 val, Double brightness)`
+  - `lightColor(Light_Infinix light_cur)`
+  - `lightBackColor(Light_Infinix light_cur)`
+  - `ChangeKeyBoardColor(Int32 ColorR, Int32 ColorG, Int32 ColorB, Double brightness)`
+  - `ChangeBackColor(Int32 ColorR, Int32 ColorG, Int32 ColorB, Double brightness)`
+  - `ChangeColor(Light_Infinix light_cur)`
+  - `ChangeBack1RecColor(Int32 ColorR, Int32 ColorG, Int32 ColorB, Double brightness)`
+  - `ChangeBack2RecColor(Int32 ColorR, Int32 ColorG, Int32 ColorB, Double brightness)`
+  - `Path_MouseLeftButtonDown(Object sender, MouseButtonEventArgs e)`
+  - `Zone_MouseLeftButtonDown(Object sender, MouseButtonEventArgs e)`
+  - `ShowMainKeyboard()`
+  - `KeyBoardAlways_Checked(Object sender, RoutedEventArgs e)`
+  - `ZoneAlways_Checked(Object sender, RoutedEventArgs e)`
+  - `BackAlways_Checked(Object sender, RoutedEventArgs e)`
+  - `KeyBoardBreath_Checked(Object sender, RoutedEventArgs e)`
+  - `ZoneBreath_Checked(Object sender, RoutedEventArgs e)`
+  - `BackBreath_Checked(Object sender, RoutedEventArgs e)`
+  - `KeyBoardWave_Checked(Object sender, RoutedEventArgs e)`
+  - `KeyBoardClock_Checked(Object sender, RoutedEventArgs e)`
+  - `ZoneClock_Checked(Object sender, RoutedEventArgs e)`
+  - `KeyBoardRainbow_Checked(Object sender, RoutedEventArgs e)`
+  - `ZoneRainbow_Checked(Object sender, RoutedEventArgs e)`
+  - `KeyBoardFlow_Checked(Object sender, RoutedEventArgs e)`
+  - `BackMusic_Checked(Object sender, RoutedEventArgs e)`
+  - `BackGaming_Checked(Object sender, RoutedEventArgs e)`
+  - `back1_MouseLeftButtonDown(Object sender, MouseButtonEventArgs e)`
+  - `back2_MouseLeftButtonDown(Object sender, MouseButtonEventArgs e)`
+  - `Custom_Board_Checked(Object sender, RoutedEventArgs e)`
+  - `Custom_Back_Checked(Object sender, RoutedEventArgs e)`
+  - `Custom_Button_Checked(Object sender, RoutedEventArgs e)`
+  - `SetUserSelectForDefaultMode()`
+  - `reset_Click(Object sender, RoutedEventArgs e)`
+  - `ClearRadioButtonGroup(String groupName)`
+  - `FindVisualChildren(DependencyObject depObj)`
+  - `setTxbufInternal(Object mode)`
+  - `WriteLightDataToUsb(Object light)`
+  - `WriteLightNotAutoClose()`
+  - `WriteLightAutoClose()`
+  - `WriteUsb()`
+  - `setComData()`
+  - `SendComData()`
+  - `StartSendMusicData()`
+  - `CloseLight()`
+  - `AnimationSelect(Light_Infinix light_cur)`
+  - `DisableUserSelect()`
+  - `EnableUserSelect()`
+  - `StartBreathAnimation()`
+  - `WaveKeyBoardColor(Int32 index)`
+  - `StartWaveAnimation()`
+  - `StartClockAnimation()`
+  - `StartRainbowAnimation()`
+  - `DrawColorBlock(WriteableBitmap bitmap, Int32 x, Int32 y, Int32 width, Int32 height, Color color)`
+  - `FlowKeyBoardColor()`
+  - `StartFlowAnimation()`
+  - `showMusic()`
+  - `showGame()`
+  - `StartRythmAnimation()`
+  - `StartJumpAnimation()`
+  - `StartRoundAnimation()`
+  - `StartCoverAnimation()`
+  - `StopAnimation(CancellationTokenSource source)`
+  - `stopAllTimer()`
+  - `SetSelectedBack()`
+  - `SetBack1NoSelect()`
+  - `SetBack1Select()`
+  - `SetBack2NoSelect()`
+  - `SetBack2Select()`
+  - `back1_color1_Checked(Object sender, RoutedEventArgs e)`
+  - `back1_color2_Checked(Object sender, RoutedEventArgs e)`
+  - `back1_color3_Checked(Object sender, RoutedEventArgs e)`
+  - `back2_color1_Checked(Object sender, RoutedEventArgs e)`
+  - `back2_color2_Checked(Object sender, RoutedEventArgs e)`
+  - `back2_color3_Checked(Object sender, RoutedEventArgs e)`
+  - `TextBox_PreviewMouseRightButtonDown(Object sender, MouseButtonEventArgs e)`
+  - `R_PreviewKeyDown(Object sender, KeyEventArgs e)`
+  - `TextBox_PreviewTextInput(Object sender, TextCompositionEventArgs e)`
+  - `TextBox_TextChanged(Object sender, TextChangedEventArgs e)`
+  - `ChangeLight(TextBox tb, Int32 index, Int32 num)`
+  - `ChangeLightBack(TextBox tb, Int32 index, Int32 num)`
+  - `CombineColorByText()`
+  - `ModeChanged(Light_Infinix light_cur)`
+  - `SetMode(Light_Infinix light_cur)`
+  - `changeRGBText(Light_Infinix light_cur)`
+  - `changeLightBrightness(Int32 val)`
+  - `Light_PropertyChanged(Object sender, PropertyChangedEventArgs e)`
+  - `Brightness_ValueChanged(Object sender, RoutedPropertyChangedEventArgs e)`
+  - `Brightness_DragCompleted(Object sender, DragCompletedEventArgs e)`
+  - `Brightness_DragStarted(Object sender, DragStartedEventArgs e)`
+  - `writeAlwaysData(Int32 index)`
+  - `writeBreathData(Int32 index)`
+  - `writeClockData(Int32 index)`
+  - `writeRainbowData(Int32 index)`
+  - `RGBLChanged(Light_Infinix light_cur)`
+  - `SwitchChanged(Light_Infinix light_cur)`
+  - `SetUI(Light_Infinix light_cur)`
+  - `SetKeyboardUI(Light_Infinix light_cur)`
+  - `SetBackLightUI(Light_Infinix light_cur)`
+  - `Dispose()`
+  - `InitializeComponent()`
+  - `_CreateDelegate(Type delegateType, String handler)`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+- **Class** `Page3` - 11 methods, 0 properties
+  - `initSettings()`
+  - `CancelToken()`
+  - `ExecLoad()`
+  - `page3Loaded(Object sender, RoutedEventArgs e)`
+  - `ExecUnLoad()`
+  - `page3UnLoaded(Object sender, RoutedEventArgs e)`
+  - `Switch1_Checked(Object sender, RoutedEventArgs e)`
+  - `ComboBox_DropDownClosed(Object sender, EventArgs e)`
+  - `InitializeComponent()`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+- **Class** `Page4` - 11 methods, 0 properties
+  - `check_fw_Click(Object sender, RoutedEventArgs e)`
+  - `updateItem(Int32 flag)`
+  - `check_dr_Click(Object sender, RoutedEventArgs e)`
+  - `Button_Click_1(Object sender, RoutedEventArgs e)`
+  - `btnDriver_Click(Object sender, RoutedEventArgs e)`
+  - `btnFirmware_Click(Object sender, RoutedEventArgs e)`
+  - `Button_Click(Object sender, RoutedEventArgs e)`
+  - `InitializeComponent()`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+  - `System.Windows.Markup.IStyleConnector.Connect(Int32 connectionId, Object target)`
+
+## Namespace: `CustomControl`
+
+- **Class** `ColorControlPanel` - 21 methods, 6 properties
+  - `setBind()`
+  - `InitialBrushChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)`
+  - `SelectBrushChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)`
+  - `SelectLChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)`
+  - `SelectValueChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)`
+  - `TextForeColorChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)`
+  - `CanChooseChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)`
+  - `RegisterEvent()`
+  - `HueThumbMove(Point point)`
+  - `SvThumbMove(Point point)`
+  - `SelectColorChanged()`
+  - `DrawColorWheel()`
+  - `InitializeComponent()`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+- **Class** `ColorHSV` - 1 methods, 0 properties
+- **Class** `ColorPicker` - 7 methods, 0 properties
+  - `PointColor(Point point)`
+  - `ScreenSnapshot()`
+  - `DeleteObject(IntPtr hObject)`
+  - `GetDC(IntPtr hwnd)`
+  - `ReleaseDC(IntPtr hwnd, IntPtr hdc)`
+  - `GetPixel(IntPtr hdc, Int32 nXPos, Int32 nYPos)`
+- **Class** `ControlColors` - 7 methods, 10 properties
+  - `Notify(String notifyName)`
+  - `OnInitialChanged()`
+  - `OnSelectedChanged(String mode)`
+  - `ConvertRgbToHsv(Color color)`
+  - `ConvertHsvToRgb(ColorHSV colorhsv)`
+- **Class** `CPU` - 16 methods, 9 properties
+  - `OnCpuTemPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)`
+  - `OnCpuFanPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)`
+  - `OnCpuSpdPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)`
+  - `TransformCpuSpdAngle()`
+  - `TransformCpuTemAngle()`
+  - `TransformCpuFanAngle()`
+  - `UpdateArcSegment(CPU cpu, String PropertyName)`
+  - `increase_Click(Object sender, RoutedEventArgs e)`
+  - `decrease_Click(Object sender, RoutedEventArgs e)`
+  - `Circle_Center1(Point p1, Point p2, Double dRadius)`
+  - `Circle_Center2(Point p1, Point p2, Double dRadius)`
+  - `Y_Coordinates(Double x, Double y, Double k, Double x0)`
+  - `InitializeComponent()`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+- **Class** `EqTriangleConver` - 3 methods, 0 properties
+  - `Convert(Object[] values, Type targetType, Object parameter, CultureInfo culture)`
+  - `ConvertBack(Object value, Type[] targetTypes, Object parameter, CultureInfo culture)`
+- **Class** `GPU` - 13 methods, 9 properties
+  - `OnGpuTemPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)`
+  - `OnGpuFanPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)`
+  - `OnGpuSpdPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)`
+  - `TransformGpuSpdAngle()`
+  - `TransformGpuTemAngle()`
+  - `TransformGpuFanAngle()`
+  - `UpdateArcSegment(GPU gpu, String PropertyName)`
+  - `increase_Click(Object sender, RoutedEventArgs e)`
+  - `decrease_Click(Object sender, RoutedEventArgs e)`
+  - `InitializeComponent()`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+- **Class** `moi_progress` - 6 methods, 1 properties
+  - `OnValuePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)`
+  - `SetValue(Int32 percentValue)`
+  - `InitializeComponent()`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+- **Class** `progress_infinix` - 7 methods, 3 properties
+  - `OnNamePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)`
+  - `OnFanPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)`
+  - `UpdateSpd(progress_infinix f)`
+  - `InitializeComponent()`
+  - `System.Windows.Markup.IComponentConnector.Connect(Int32 connectionId, Object target)`
+
+## Namespace: `IWshRuntimeLibrary`
+
+- **Interface** `IWshShell` - 0 methods, 0 properties
+- **Interface** `IWshShell2` - 0 methods, 0 properties
+- **Interface** `IWshShell3` - 2 methods, 0 properties
+  - `_VtblGap1_4()`
+  - `CreateShortcut(String PathLink)`
+- **Interface** `IWshShortcut` - 5 methods, 6 properties
+  - `_VtblGap1_2()`
+  - `_VtblGap2_2()`
+  - `_VtblGap3_1()`
+  - `_VtblGap4_1()`
+  - `Save()`
+- **Interface** `WshShell` - 0 methods, 0 properties
+
+## Namespace: `Microsoft.CodeAnalysis`
+
+- **Class** `EmbeddedAttribute` - 1 methods, 0 properties
+
+## Namespace: `System.Runtime.CompilerServices`
+
+- **Class** `NullableAttribute` - 2 methods, 0 properties
+- **Class** `NullableContextAttribute` - 1 methods, 0 properties
+
