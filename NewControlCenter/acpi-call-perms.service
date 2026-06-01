@@ -1,0 +1,11 @@
+[Unit]
+Description=Set permissions for /proc/acpi/call
+After=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/chmod 666 /proc/acpi/call
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

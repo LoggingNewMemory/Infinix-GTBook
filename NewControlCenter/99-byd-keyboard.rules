@@ -1,2 +1,3 @@
 SUBSYSTEM=="usb", ATTR{idVendor}=="340e", ATTR{idProduct}=="8002", MODE="0666"
 SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", MODE="0666"
+KERNEL=="ttyS4", MODE="0666"
