@@ -21,10 +21,10 @@ class LightingService:
         self._anim_thread = None
         self._stop_event = threading.Event()
 
-    def start_animation(self, mode, r, g, b, brightness, is_rainbow=False, sens=50, smooth=50, target="back_zone"):
+    def start_animation(self, mode, r, g, b, brightness, is_rainbow=False, sens=50, smooth=50, target="back_zone", audio_device=None):
         self.stop_animation()
         self._stop_event.clear()
-        self._anim_thread = threading.Thread(target=self._anim_loop, args=(mode, r, g, b, brightness, is_rainbow, sens, smooth, target, self._stop_event), daemon=True)
+        self._anim_thread = threading.Thread(target=self._anim_loop, args=(mode, r, g, b, brightness, is_rainbow, sens, smooth, target, audio_device, self._stop_event), daemon=True)
         self._anim_thread.start()
 
     def stop_animation(self):
@@ -33,10 +33,29 @@ class LightingService:
             self._anim_thread.join(timeout=1.0)
             self._anim_thread = None
 
-    def _anim_loop(self, mode, r, g, b, brightness, is_rainbow, sens, smooth, target, stop_event):
+    def _anim_loop(self, mode, r, g, b, brightness, is_rainbow, sens, smooth, target, audio_device, stop_event):
         from controlcenter.models.tx_buf import get_back_zone_packet
         import time
         import colorsys
+        import os
+        import subprocess
+        
+        if audio_device == "auto_speaker":
+            try:
+                out = subprocess.check_output(["pactl", "info"], text=True)
+                default_sink = None
+                for line in out.splitlines():
+                    if line.startswith("Default Sink:"):
+                        default_sink = line.split(":", 1)[1].strip()
+                        break
+                if default_sink:
+                    os.environ["PULSE_SOURCE"] = default_sink + ".monitor"
+            except Exception as e:
+                logger.error(f"Failed to get pulseaudio sink: {e}")
+            audio_device = None
+        elif audio_device is not None:
+            os.environ.pop("PULSE_SOURCE", None)
+            
         try:
             import sounddevice as sd
             import numpy as np
@@ -154,7 +173,7 @@ class LightingService:
 
         try:
             # Blocksize 1024 = ~23ms updates (super fast ~43 fps for fluid lighting)
-            with sd.InputStream(callback=audio_callback, blocksize=1024):
+            with sd.InputStream(device=audio_device, callback=audio_callback, blocksize=1024):
                 while not stop_event.is_set():
                     stop_event.wait(0.5)
         except Exception as e:
@@ -175,7 +194,7 @@ class LightingService:
         # We'll just update the brightness state and re-apply current mode.
         pass
 
-    def set_keyboard_mode(self, mode: KeyboardLightMode, color_hex: str = "#FF0000", brightness: int = 255, sens: int = 50, smooth: int = 50):
+    def set_keyboard_mode(self, mode: KeyboardLightMode, color_hex: str = "#FF0000", brightness: int = 255, sens: int = 50, smooth: int = 50, audio_device=None):
         """
         Sets the keyboard lighting mode and color.
         """
@@ -183,7 +202,7 @@ class LightingService:
         r, g, b = self._hex_to_rgb(color_hex)
         
         if mode == KeyboardLightMode.RythmDance:
-            self.start_animation(mode.value, r, g, b, brightness, is_rainbow=True, sens=sens, smooth=smooth, target="keyboard")
+            self.start_animation(mode.value, r, g, b, brightness, is_rainbow=True, sens=sens, smooth=smooth, target="keyboard", audio_device=audio_device)
             return True
             
         packet = get_keyboard_led_packet(mode.value, r, g, b, brightness)
@@ -203,7 +222,7 @@ class LightingService:
             return True
         return False
         
-    def set_serial_back_zone_mode(self, mode_enum_val: int, color_hex: str = "#FF0000", brightness: int = 100, sens: int = 50, smooth: int = 50):
+    def set_serial_back_zone_mode(self, mode_enum_val: int, color_hex: str = "#FF0000", brightness: int = 100, sens: int = 50, smooth: int = 50, audio_device=None):
         r, g, b = self._hex_to_rgb(color_hex)
         from controlcenter.models.tx_buf import get_back_zone_packet, BackLightCmd
         
@@ -218,7 +237,7 @@ class LightingService:
         self.stop_animation()
         
         if mode_enum_val in (BackLightCmd.Light_Rythm, BackLightCmd.Light_Jump):
-            self.start_animation(mode_enum_val, r, g, b, brightness, is_rainbow, sens, smooth)
+            self.start_animation(mode_enum_val, r, g, b, brightness, is_rainbow, sens, smooth, target="back_zone", audio_device=audio_device)
             return True
         
         speed = 1
@@ -229,7 +248,7 @@ class LightingService:
             speed = 4
             fd1, fd2, fd3, fd4 = 48, 235, 231, 100
         elif mode_enum_val in (BackLightCmd.Light_Rythm, BackLightCmd.Light_Jump):
-            self.start_animation(mode_enum_val, r, g, b, brightness)
+            self.start_animation(mode_enum_val, r, g, b, brightness, target="back_zone", audio_device=audio_device)
             return True
             
         packet = get_back_zone_packet(mode_enum_val, r, g, b, brightness, speed=speed, fd1=fd1, fd2=fd2, fd3=fd3, fd4=fd4)

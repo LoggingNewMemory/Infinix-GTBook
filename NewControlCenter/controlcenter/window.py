@@ -226,6 +226,27 @@ class MainWindow(Adw.ApplicationWindow):
         # Rhythm Settings Group
         self.rhythm_group = Adw.PreferencesGroup(title="Rhythm & Spectrum Settings")
         
+        device_row = Adw.ActionRow(title="Audio Device")
+        device_row.set_subtitle("Select which device to monitor")
+        
+        self.audio_device_ids = ["auto_speaker"]
+        device_names = ["Auto (Speaker Output)"]
+        try:
+            import sounddevice as sd
+            devices = sd.query_devices()
+            for i, dev in enumerate(devices):
+                if dev['max_input_channels'] > 0:
+                    self.audio_device_ids.append(i)
+                    device_names.append(dev['name'])
+        except Exception as e:
+            pass
+            
+        self.device_dropdown = Gtk.DropDown.new_from_strings(device_names)
+        self.device_dropdown.set_selected(0)
+        
+        device_row.add_suffix(self.device_dropdown)
+        self.rhythm_group.add(device_row)
+        
         sens_row = Adw.ActionRow(title="Sensitivity")
         sens_row.set_subtitle("Adjust how strongly LEDs react to sound")
         self.sens_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
@@ -330,6 +351,9 @@ class MainWindow(Adw.ApplicationWindow):
         sens = int(self.sens_scale.get_value())
         smooth = int(self.smooth_scale.get_value())
         
+        device_idx = self.device_dropdown.get_selected()
+        audio_device = self.audio_device_ids[device_idx] if hasattr(self, 'audio_device_ids') and device_idx < len(self.audio_device_ids) else None
+        
         if zone == 0:
             # Main Keyboard
             mode_map = {
@@ -345,7 +369,7 @@ class MainWindow(Adw.ApplicationWindow):
             mapped_mode = mode_map.get(idx, KeyboardLightMode.Always)
             if idx == 0:
                 hex_color = "#000000"
-            self.lighting.set_keyboard_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth)
+            self.lighting.set_keyboard_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth, audio_device=audio_device)
         elif 1 <= zone <= 4:
             # Individual Keyboard Zones
             cmd_map = {1: 6, 2: 6, 3: 7, 4: 7}
@@ -374,7 +398,7 @@ class MainWindow(Adw.ApplicationWindow):
             mapped_mode = mode_map_back.get(idx, BackLightCmd.Light_AlwaysOn)
             if idx == 0:
                 hex_color = "#000000"
-            self.lighting.set_serial_back_zone_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth)
+            self.lighting.set_serial_back_zone_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth, audio_device=audio_device)
 
     def update_monitors(self):
         cpu_temp = self.monitor.get_cpu_temp()
