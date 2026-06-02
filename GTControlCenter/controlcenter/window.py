@@ -13,8 +13,10 @@ from controlcenter.services.serial_service import SerialService
 from controlcenter.services.lighting import LightingService
 from controlcenter.services.fan_service import FanService
 from controlcenter.services.monitor import MonitorService
+from controlcenter.services.config import ConfigManager
 
 logger = logging.getLogger(__name__)
+
 
 class MainWindow(Adw.ApplicationWindow):
     def __init__(self, app):
@@ -32,8 +34,11 @@ class MainWindow(Adw.ApplicationWindow):
         self.lighting = LightingService(self.usb, self.serial)
         self.fan = FanService(self.usb, self.wmi)
         self.monitor = MonitorService(self.wmi)
+        self.config_mgr = ConfigManager()
         
         self.setup_ui()
+        self.load_settings()
+        self.apply_all_settings()
         
         # Start monitor update loop
         GLib.timeout_add(2000, self.update_monitors)
@@ -55,6 +60,13 @@ class MainWindow(Adw.ApplicationWindow):
         # HeaderBar
         self.header = Adw.HeaderBar()
         self.header.set_title_widget(Adw.WindowTitle(title="GT Control Center"))
+        
+        # Reset button in header bar
+        reset_btn = Gtk.Button(label="Reset Settings")
+        reset_btn.set_tooltip_text("Reset all settings to default")
+        reset_btn.connect("clicked", self.on_reset_settings)
+        self.header.pack_end(reset_btn)
+        
         self.box.append(self.header)
         
         # ViewStack for tabs
@@ -384,7 +396,7 @@ class MainWindow(Adw.ApplicationWindow):
         pass
 
 
-    def set_performance_mode(self, mode: int):
+    def set_performance_mode(self, mode: int, save=True):
         self.btn_office.remove_css_class("suggested-action")
         self.btn_balance.remove_css_class("suggested-action")
         self.btn_gaming.remove_css_class("suggested-action")
@@ -405,6 +417,10 @@ class MainWindow(Adw.ApplicationWindow):
             self.fan.set_fan_mode(FanCtrlMode.FullSpeed)
         else:
             self.fan.set_fan_mode(target_fan_mode)
+            
+        if save:
+            self.config_mgr.config["performance"]["mode"] = mode
+            self.config_mgr.save()
 
     def on_max_fan_toggled(self, switch, state):
         if state:
@@ -417,6 +433,9 @@ class MainWindow(Adw.ApplicationWindow):
                 self.fan.set_fan_mode(FanCtrlMode.PerformanceMode)
             elif self.btn_gaming.has_css_class("suggested-action"):
                 self.fan.set_fan_mode(FanCtrlMode.GamingMode)
+                
+        self.config_mgr.config["performance"]["max_fan"] = state
+        self.config_mgr.save()
         return False
 
     def apply_keyboard_lighting(self, btn):
@@ -460,6 +479,17 @@ class MainWindow(Adw.ApplicationWindow):
             if idx == 0:
                 hex_color = "#000000"
             self.lighting.set_zone_mode(cmd, param, hex_color, brightness=brightness)
+            
+        self.config_mgr.config["keyboard"].update({
+            "zone": zone,
+            "mode": idx,
+            "color": hex_color if idx != 0 else f"#{int(color.red*255):02x}{int(color.green*255):02x}{int(color.blue*255):02x}",
+            "brightness": brightness_pct,
+            "audio_device": device_idx,
+            "sens": sens,
+            "smooth": smooth
+        })
+        self.config_mgr.save()
 
     def apply_back_zone_lighting(self, btn):
         color = self.bz_current_rgba
@@ -492,6 +522,16 @@ class MainWindow(Adw.ApplicationWindow):
             hex_color = "#000000"
         self.lighting.set_serial_back_zone_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth, audio_device=audio_device)
 
+        self.config_mgr.config["backzone"].update({
+            "mode": idx,
+            "color": hex_color if idx != 0 else f"#{int(color.red*255):02x}{int(color.green*255):02x}{int(color.blue*255):02x}",
+            "brightness": brightness_pct,
+            "audio_device": device_idx,
+            "sens": sens,
+            "smooth": smooth
+        })
+        self.config_mgr.save()
+
     def update_monitors(self):
         cpu_temp = self.monitor.get_cpu_temp()
         gpu_temp = self.monitor.get_gpu_temp()
@@ -500,3 +540,70 @@ class MainWindow(Adw.ApplicationWindow):
         self.lbl_gpu_temp.set_label(f"{gpu_temp} °C" if gpu_temp > 0 else "N/A")
         
         return True # Continue timer
+
+    def load_settings(self):
+        conf = self.config_mgr.config
+        
+        # Performance
+        perf = conf.get("performance", {})
+        self.max_fan_switch.set_active(perf.get("max_fan", False))
+
+        # Keyboard
+        kb = conf.get("keyboard", {})
+        if hasattr(self, 'kb_zone_dropdown'):
+            self.kb_zone_dropdown.set_selected(kb.get("zone", 0))
+            self.kb_mode_dropdown.set_selected(kb.get("mode", 1))
+            self.kb_current_rgba.parse(kb.get("color", "#FF0000"))
+            self._update_color_button_ui(self.kb_color_button, self.kb_current_rgba)
+            self.kb_brightness_scale.set_value(kb.get("brightness", 100))
+            if hasattr(self, 'kb_device_dropdown') and hasattr(self, 'kb_audio_device_ids'):
+                device_idx = kb.get("audio_device", 0)
+                if device_idx < len(self.kb_audio_device_ids):
+                    self.kb_device_dropdown.set_selected(device_idx)
+            if hasattr(self, 'kb_sens_scale'):
+                self.kb_sens_scale.set_value(kb.get("sens", 35))
+            if hasattr(self, 'kb_smooth_scale'):
+                self.kb_smooth_scale.set_value(kb.get("smooth", 0))
+
+        # Back Zone
+        bz = conf.get("backzone", {})
+        if hasattr(self, 'bz_mode_dropdown'):
+            self.bz_mode_dropdown.set_selected(bz.get("mode", 1))
+            self.bz_current_rgba.parse(bz.get("color", "#FF0000"))
+            self._update_color_button_ui(self.bz_color_button, self.bz_current_rgba)
+            self.bz_brightness_scale.set_value(bz.get("brightness", 100))
+            if hasattr(self, 'bz_device_dropdown') and hasattr(self, 'bz_audio_device_ids'):
+                device_idx = bz.get("audio_device", 0)
+                if device_idx < len(self.bz_audio_device_ids):
+                    self.bz_device_dropdown.set_selected(device_idx)
+            if hasattr(self, 'bz_sens_scale'):
+                self.bz_sens_scale.set_value(bz.get("sens", 35))
+            if hasattr(self, 'bz_smooth_scale'):
+                self.bz_smooth_scale.set_value(bz.get("smooth", 0))
+
+    def apply_all_settings(self):
+        conf = self.config_mgr.config
+        perf = conf.get("performance", {})
+        self.set_performance_mode(perf.get("mode", 2), save=False)
+        self.apply_keyboard_lighting(None)
+        self.apply_back_zone_lighting(None)
+
+    def on_reset_settings(self, btn):
+        dialog = Adw.MessageDialog(
+            transient_for=self,
+            heading="Reset Settings",
+            body="Are you sure you want to reset all settings to their default values? This cannot be undone."
+        )
+        dialog.add_response("cancel", "Cancel")
+        dialog.add_response("reset", "Reset")
+        dialog.set_response_appearance("reset", Adw.ResponseAppearance.DESTRUCTIVE)
+        
+        def on_response(dlg, response):
+            if response == "reset":
+                self.config_mgr.reset()
+                self.load_settings()
+                self.apply_all_settings()
+                
+        dialog.connect("response", on_response)
+        dialog.present()
+
