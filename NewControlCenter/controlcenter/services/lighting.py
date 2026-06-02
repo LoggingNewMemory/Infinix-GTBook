@@ -20,12 +20,20 @@ class LightingService:
         self.serial = serial_service
         self._anim_thread = None
         self._stop_event = threading.Event()
+        
+        self.kb_anim = None
+        self.bz_anim = None
+        self.audio_device = None
 
-    def start_animation(self, mode, r, g, b, brightness, is_rainbow=False, sens=50, smooth=50, target="back_zone", audio_device=None):
-        self.stop_animation()
-        self._stop_event.clear()
-        self._anim_thread = threading.Thread(target=self._anim_loop, args=(mode, r, g, b, brightness, is_rainbow, sens, smooth, target, audio_device, self._stop_event), daemon=True)
-        self._anim_thread.start()
+    def update_animations(self):
+        needs_thread = self.kb_anim is not None or self.bz_anim is not None
+        if needs_thread:
+            self.stop_animation()
+            self._stop_event.clear()
+            self._anim_thread = threading.Thread(target=self._anim_loop, args=(self._stop_event,), daemon=True)
+            self._anim_thread.start()
+        else:
+            self.stop_animation()
 
     def stop_animation(self):
         self._stop_event.set()
@@ -33,12 +41,14 @@ class LightingService:
             self._anim_thread.join(timeout=1.0)
             self._anim_thread = None
 
-    def _anim_loop(self, mode, r, g, b, brightness, is_rainbow, sens, smooth, target, audio_device, stop_event):
+    def _anim_loop(self, stop_event):
         from controlcenter.models.tx_buf import get_back_zone_packet
         import time
         import colorsys
         import os
         import subprocess
+        
+        audio_device = self.audio_device
         
         if audio_device == "auto_speaker":
             try:
@@ -63,13 +73,11 @@ class LightingService:
             logger.error("sounddevice or numpy not installed. Cannot use real audio rhythm.")
             return
 
-        # 4 Frequency Bands for the Spectrum Analyzer
         current_b1 = 0.0
         current_b2 = 0.0
         current_b3 = 0.0
         current_b4 = 0.0
 
-        # AGC (Automatic Gain Control) Peak Tracking
         peak_b1 = 0.002
         peak_b2 = 0.002
         peak_b3 = 0.002
@@ -82,49 +90,35 @@ class LightingService:
             nonlocal peak_b1, peak_b2, peak_b3, peak_b4, rainbow_hue
             if stop_event.is_set():
                 raise sd.CallbackStop
+                
+            active_anim = self.bz_anim or self.kb_anim
+            if not active_anim:
+                return
+                
+            sens = active_anim["sens"]
+            smooth = active_anim["smooth"]
             
-            # Mix down to mono for frequency analysis
             mono_data = np.mean(indata, axis=1) if indata.shape[1] > 1 else indata[:, 0]
-            
-            # Apply a Hanning window to reduce spectral leakage
             window = np.hanning(len(mono_data))
             windowed = mono_data * window
-            
-            # Compute FFT (Fast Fourier Transform)
             fft_result = np.fft.rfft(windowed)
-            # Normalize magnitude
             fft_mag = np.abs(fft_result) * 2.0 / len(mono_data)
-            
-            # 1. Bass:       43Hz - 250Hz   (Bins 1 to 6)
-            # 2. Low-Mid:    250Hz - 1000Hz (Bins 6 to 23)
-            # 3. High-Mid:   1000Hz - 4000Hz(Bins 23 to 93)
-            # 4. Treble:     4000Hz - 16kHz (Bins 93 to 372)
             
             b1_raw = np.mean(fft_mag[1:6])
             b2_raw = np.mean(fft_mag[6:23])
             b3_raw = np.mean(fft_mag[23:93])
             b4_raw = np.mean(fft_mag[93:372])
             
-            # Automatic Gain Control (AGC): 
-            # Slowly decay the peak tracking, but instantly rise to new loud peaks.
-            # We enforce a hard minimum (0.002) so pure background silence doesn't get amplified.
             peak_b1 = max(peak_b1 * 0.99, b1_raw, 0.002)
             peak_b2 = max(peak_b2 * 0.99, b2_raw, 0.002)
             peak_b3 = max(peak_b3 * 0.99, b3_raw, 0.002)
             peak_b4 = max(peak_b4 * 0.99, b4_raw, 0.002)
             
-            # Smooth Attack and Decay based on UI (0 to 100)
-            # Higher smooth -> lower attack/decay values (slower reaction)
             smooth_val = max(0.0, min(100.0, smooth)) / 100.0
-            
-            # Map smooth to attack: 1.0 (fast) down to 0.1 (slow)
             attack = 1.0 - (smooth_val * 0.9)
-            # Map smooth to decay: 0.5 (fast) down to 0.05 (slow)
             decay = 0.5 - (smooth_val * 0.45)
             
-            # Sensitivity (Gain multiplier) based on UI (0 to 100)
             sens_val = max(0.0, min(100.0, sens)) / 50.0
-            # Square the sensitivity to give a steep exponential range (0.0004 to 4.0)
             gain = sens_val ** 2.0
             
             v1 = min(255.0, (((b1_raw / peak_b1) ** 1.5) * 255.0 * gain))
@@ -137,42 +131,50 @@ class LightingService:
             current_b3 += (attack if v3 > current_b3 else decay) * (v3 - current_b3)
             current_b4 += (attack if v4 > current_b4 else decay) * (v4 - current_b4)
             
-            fd1 = int(current_b1)
-            fd2 = int(current_b2)
-            fd3 = int(current_b3)
-            fd4 = int(current_b4)
-            
-            if mode == 4: # BackLightCmd.Light_Jump
-                overall_vol = int((current_b1 + current_b2 + current_b3 + current_b4) / 4)
-                fd1 = overall_vol
-                fd2 = 0
-                fd3 = 0
-                fd4 = overall_vol
-
-            
-            if is_rainbow:
-                # Cycle hue over time (approx 5 seconds for a full cycle at ~43 fps)
+            if (self.bz_anim and self.bz_anim["is_rainbow"]) or (self.kb_anim and self.kb_anim["is_rainbow"]):
                 rainbow_hue = (rainbow_hue + 0.005) % 1.0
                 cr, cg, cb = colorsys.hsv_to_rgb(rainbow_hue, 1.0, 1.0)
-                cur_r, cur_g, cur_b = int(cr * 255), int(cg * 255), int(cb * 255)
-            else:
-                cur_r, cur_g, cur_b = r, g, b
-            
-            if target == "back_zone":
-                packet = get_back_zone_packet(mode, cur_r, cur_g, cur_b, brightness, speed=1, fd1=fd1, fd2=fd2, fd3=fd3, fd4=fd4)
+                
+            if self.bz_anim:
+                bz = self.bz_anim
+                bz_mode = bz["mode"]
+                if bz["is_rainbow"]:
+                    bz_r, bz_g, bz_b = int(cr * 255), int(cg * 255), int(cb * 255)
+                else:
+                    bz_r, bz_g, bz_b = bz["r"], bz["g"], bz["b"]
+                
+                bz_fd1 = int(current_b1)
+                bz_fd2 = int(current_b2)
+                bz_fd3 = int(current_b3)
+                bz_fd4 = int(current_b4)
+                
+                if bz_mode == 4: # BackLightCmd.Light_Jump
+                    overall_vol = int((current_b1 + current_b2 + current_b3 + current_b4) / 4)
+                    bz_fd1 = overall_vol
+                    bz_fd2 = 0
+                    bz_fd3 = 0
+                    bz_fd4 = overall_vol
+                    
+                packet = get_back_zone_packet(bz_mode, bz_r, bz_g, bz_b, bz["brightness"], speed=1, fd1=bz_fd1, fd2=bz_fd2, fd3=bz_fd3, fd4=bz_fd4)
                 self.serial.send_data(packet)
-            elif target == "keyboard":
+                
+            if self.kb_anim:
+                kb = self.kb_anim
+                if kb["is_rainbow"]:
+                    kb_r, kb_g, kb_b = int(cr * 255), int(cg * 255), int(cb * 255)
+                else:
+                    kb_r, kb_g, kb_b = kb["r"], kb["g"], kb["b"]
+                
                 overall_vol = max(current_b1, current_b2, current_b3, current_b4)
                 vol_ratio = overall_vol / 255.0
-                mod_r = int(cur_r * vol_ratio)
-                mod_g = int(cur_g * vol_ratio)
-                mod_b = int(cur_b * vol_ratio)
+                mod_r = int(kb_r * vol_ratio)
+                mod_g = int(kb_g * vol_ratio)
+                mod_b = int(kb_b * vol_ratio)
                 
-                packet = get_keyboard_led_packet(1, mod_r, mod_g, mod_b, brightness)
+                packet = get_keyboard_led_packet(1, mod_r, mod_g, mod_b, kb["brightness"])
                 self.usb.send_data(packet)
 
         try:
-            # Blocksize 1024 = ~23ms updates (super fast ~43 fps for fluid lighting)
             with sd.InputStream(device=audio_device, callback=audio_callback, blocksize=1024):
                 while not stop_event.is_set():
                     stop_event.wait(0.5)
@@ -198,13 +200,21 @@ class LightingService:
         """
         Sets the keyboard lighting mode and color.
         """
-        self.stop_animation()
         r, g, b = self._hex_to_rgb(color_hex)
         
         if mode == KeyboardLightMode.RythmDance:
-            self.start_animation(mode.value, r, g, b, brightness, is_rainbow=True, sens=sens, smooth=smooth, target="keyboard", audio_device=audio_device)
+            self.kb_anim = {
+                "mode": mode.value, "r": r, "g": g, "b": b,
+                "brightness": brightness, "is_rainbow": True,
+                "sens": sens, "smooth": smooth
+            }
+            if audio_device is not None:
+                self.audio_device = audio_device
+            self.update_animations()
             return True
             
+        self.kb_anim = None
+        self.update_animations()
         packet = get_keyboard_led_packet(mode.value, r, g, b, brightness)
         
         if self.usb.send_data(packet):
@@ -234,11 +244,19 @@ class LightingService:
             mode_enum_val = BackLightCmd.Light_Jump
             is_rainbow = True
         
-        self.stop_animation()
-        
         if mode_enum_val in (BackLightCmd.Light_Rythm, BackLightCmd.Light_Jump):
-            self.start_animation(mode_enum_val, r, g, b, brightness, is_rainbow, sens, smooth, target="back_zone", audio_device=audio_device)
+            self.bz_anim = {
+                "mode": mode_enum_val, "r": r, "g": g, "b": b,
+                "brightness": brightness, "is_rainbow": is_rainbow,
+                "sens": sens, "smooth": smooth
+            }
+            if audio_device is not None:
+                self.audio_device = audio_device
+            self.update_animations()
             return True
+            
+        self.bz_anim = None
+        self.update_animations()
         
         speed = 1
         fd1, fd2, fd3, fd4 = 0, 0, 0, 0
@@ -247,9 +265,6 @@ class LightingService:
         elif mode_enum_val in (BackLightCmd.Light_Round, BackLightCmd.Light_Cover):
             speed = 4
             fd1, fd2, fd3, fd4 = 48, 235, 231, 100
-        elif mode_enum_val in (BackLightCmd.Light_Rythm, BackLightCmd.Light_Jump):
-            self.start_animation(mode_enum_val, r, g, b, brightness, target="back_zone", audio_device=audio_device)
-            return True
             
         packet = get_back_zone_packet(mode_enum_val, r, g, b, brightness, speed=speed, fd1=fd1, fd2=fd2, fd3=fd3, fd4=fd4)
         if self.serial.send_data(packet):
