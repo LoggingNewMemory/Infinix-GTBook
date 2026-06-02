@@ -1,157 +1,18 @@
-import gi
-gi.require_version('Gtk', '4.0')
-gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, GLib, Gdk
+import re
 
-import logging
-from typing import Optional
+with open("NewControlCenter/controlcenter/window.py", "r") as f:
+    content = f.read()
 
-from controlcenter.models.tx_buf import KeyboardLightMode, KeyboardLight12Mode, BackLightCmd, FanCtrlMode
-from controlcenter.services.acpi_wmi import ACPIWmi
-from controlcenter.services.usb_service import USBService
-from controlcenter.services.serial_service import SerialService
-from controlcenter.services.lighting import LightingService
-from controlcenter.services.fan_service import FanService
-from controlcenter.services.monitor import MonitorService
+# We will replace `self.setup_lighting_page()` with `self.setup_keyboard_page(); self.setup_back_zone_page()`
+content = content.replace("self.setup_lighting_page()", "self.setup_keyboard_page()\n        self.setup_back_zone_page()")
 
-logger = logging.getLogger(__name__)
+# Find the start of setup_lighting_page
+start_idx = content.find("    def setup_lighting_page(self):")
 
-class MainWindow(Adw.ApplicationWindow):
-    def __init__(self, app):
-        super().__init__(application=app, title="BYD Control Center")
-        self.set_default_size(1100, 750)
-        
-        style_manager = Adw.StyleManager.get_default()
-        style_manager.set_color_scheme(Adw.ColorScheme.FORCE_DARK)
-        
-        # Initialize services
-        self.wmi = ACPIWmi()
-        self.usb = USBService()
-        self.usb.connect()
-        self.serial = SerialService()
-        self.lighting = LightingService(self.usb, self.serial)
-        self.fan = FanService(self.usb, self.wmi)
-        self.monitor = MonitorService(self.wmi)
-        
-        self.setup_ui()
-        
-        # Start monitor update loop
-        GLib.timeout_add(2000, self.update_monitors)
+# Find the end of apply_lighting
+end_idx = content.find("    def update_monitors(self):")
 
-    def setup_ui(self):
-        css_provider = Gtk.CssProvider()
-        css = """
-        .stat-card { background-color: alpha(currentColor, 0.05); border-radius: 12px; padding: 24px; border: 1px solid alpha(currentColor, 0.1); }
-        .temp-value { font-size: 36pt; font-weight: 900; color: #30b3eb; }
-        .temp-label { font-size: 16pt; font-weight: bold; color: alpha(currentColor, 0.5); }
-        """
-        css_provider.load_from_data(css.encode())
-        Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-        
-        # Main layout
-        self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.set_content(self.box)
-        
-        # HeaderBar
-        self.header = Adw.HeaderBar()
-        self.header.set_title_widget(Adw.WindowTitle(title="BYD Control Center"))
-        self.box.append(self.header)
-        
-        # ViewStack for tabs
-        self.stack = Adw.ViewStack()
-        self.stack.set_vexpand(True)
-        
-        # ViewSwitcher (Tab bar)
-        self.switcher_bar = Adw.ViewSwitcherBar()
-        self.switcher_bar.set_stack(self.stack)
-        self.switcher_bar.set_reveal(True)
-        self.box.append(self.switcher_bar)
-        
-        # Add Pages
-        self.setup_performance_page()
-        self.setup_keyboard_page()
-        self.setup_back_zone_page()
-        
-        self.box.append(self.stack)
-
-    def setup_performance_page(self):
-        page = Adw.PreferencesPage()
-        
-        # System Mode Group
-        mode_group = Adw.PreferencesGroup(title="System Mode", description="Choose the performance profile")
-        mode_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        mode_box.add_css_class("linked")
-        mode_box.set_halign(Gtk.Align.CENTER)
-        mode_box.set_margin_top(12)
-        mode_box.set_margin_bottom(12)
-        
-        self.btn_office = Gtk.Button(label="Office")
-        self.btn_office.connect("clicked", lambda x: self.set_performance_mode(1))
-        
-        self.btn_balance = Gtk.Button(label="Balance")
-        self.btn_balance.connect("clicked", lambda x: self.set_performance_mode(2))
-        
-        self.btn_gaming = Gtk.Button(label="Gaming")
-        self.btn_gaming.add_css_class("suggested-action") # Default highlight
-        self.btn_gaming.connect("clicked", lambda x: self.set_performance_mode(3))
-        
-        mode_box.append(self.btn_office)
-        mode_box.append(self.btn_balance)
-        mode_box.append(self.btn_gaming)
-        
-        mode_group.add(mode_box)
-        
-        # Max Fan
-        max_fan_row = Adw.ActionRow(title="Max Fan")
-        max_fan_row.set_subtitle("Forces fans to run at maximum speed unconditionally")
-        self.max_fan_switch = Gtk.Switch()
-        self.max_fan_switch.set_valign(Gtk.Align.CENTER)
-        self.max_fan_switch.connect("state-set", self.on_max_fan_toggled)
-        max_fan_row.add_suffix(self.max_fan_switch)
-        
-        mode_group.add(max_fan_row)
-        
-        page.add(mode_group)
-        
-        # Monitoring Group
-        mon_group = Adw.PreferencesGroup(title="System Dashboard", description="Real-time component temperatures")
-        
-        dashboard_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=24)
-        dashboard_box.set_halign(Gtk.Align.CENTER)
-        dashboard_box.set_margin_top(24)
-        dashboard_box.set_margin_bottom(24)
-        
-        # CPU Card
-        cpu_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        cpu_card.add_css_class("stat-card")
-        cpu_card.set_size_request(200, -1)
-        lbl_cpu_title = Gtk.Label(label="CPU Temp")
-        lbl_cpu_title.add_css_class("temp-label")
-        self.lbl_cpu_temp = Gtk.Label(label="-- °C")
-        self.lbl_cpu_temp.add_css_class("temp-value")
-        cpu_card.append(lbl_cpu_title)
-        cpu_card.append(self.lbl_cpu_temp)
-        
-        # GPU Card
-        gpu_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        gpu_card.add_css_class("stat-card")
-        gpu_card.set_size_request(200, -1)
-        lbl_gpu_title = Gtk.Label(label="GPU Temp")
-        lbl_gpu_title.add_css_class("temp-label")
-        self.lbl_gpu_temp = Gtk.Label(label="-- °C")
-        self.lbl_gpu_temp.add_css_class("temp-value")
-        gpu_card.append(lbl_gpu_title)
-        gpu_card.append(self.lbl_gpu_temp)
-        
-        dashboard_box.append(cpu_card)
-        dashboard_box.append(gpu_card)
-        mon_group.add(dashboard_box)
-        page.add(mon_group)
-        
-        perf_page = self.stack.add_titled(page, "performance", "Performance")
-        perf_page.set_icon_name("utilities-system-monitor-symbolic")
-
-
+replacement = """
     def _create_rhythm_group(self, prefix):
         group = Adw.PreferencesGroup(title="Rhythm & Spectrum Settings")
         
@@ -363,7 +224,7 @@ class MainWindow(Adw.ApplicationWindow):
         # based on individual zones if needed. Currently they share the same list.
         pass
 
-
+""" + """
     def set_performance_mode(self, mode: int):
         self.btn_office.remove_css_class("suggested-action")
         self.btn_balance.remove_css_class("suggested-action")
@@ -472,11 +333,10 @@ class MainWindow(Adw.ApplicationWindow):
             hex_color = "#000000"
         self.lighting.set_serial_back_zone_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth, audio_device=audio_device)
 
-    def update_monitors(self):
-        cpu_temp = self.monitor.get_cpu_temp()
-        gpu_temp = self.monitor.get_gpu_temp()
-        
-        self.lbl_cpu_temp.set_label(f"{cpu_temp} °C" if cpu_temp > 0 else "N/A")
-        self.lbl_gpu_temp.set_label(f"{gpu_temp} °C" if gpu_temp > 0 else "N/A")
-        
-        return True # Continue timer
+"""
+
+new_content = content[:start_idx] + replacement + content[end_idx:]
+
+with open("NewControlCenter/controlcenter/window.py", "w") as f:
+    f.write(new_content)
+
