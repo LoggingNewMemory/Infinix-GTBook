@@ -195,6 +195,9 @@ class LightingService:
         if mode_enum_val == 99:
             mode_enum_val = BackLightCmd.Light_Rythm
             is_rainbow = True
+        elif mode_enum_val == 98:
+            mode_enum_val = BackLightCmd.Light_Jump
+            is_rainbow = True
         
         self.stop_animation()
         

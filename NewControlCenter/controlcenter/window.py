@@ -275,7 +275,7 @@ class MainWindow(Adw.ApplicationWindow):
             self.mode_dropdown.set_model(Gtk.StringList.new(["Off", "Static Color", "Breathing", "Neon Cycle", "Rainbow", "Flow", "Wave"]))
             self.mode_dropdown.set_selected(1)
         elif zone == 5:
-            self.mode_dropdown.set_model(Gtk.StringList.new(["Off", "Static Color", "Breathing", "Rhythm", "Rainbow Rhythm", "Jump", "Round", "Cover"]))
+            self.mode_dropdown.set_model(Gtk.StringList.new(["Off", "Static Color", "Breathing", "Rhythm", "Rainbow Rhythm", "Jump", "Rainbow Jump", "Round", "Cover"]))
             self.mode_dropdown.set_selected(1)
 
     def set_performance_mode(self, mode: int):
@@ -366,8 +366,9 @@ class MainWindow(Adw.ApplicationWindow):
                 3: BackLightCmd.Light_Rythm,
                 4: 99, # 99 is our custom Rainbow Rhythm
                 5: BackLightCmd.Light_Jump,
-                6: BackLightCmd.Light_Round,
-                7: BackLightCmd.Light_Cover
+                6: 98, # 98 is our custom Rainbow Jump
+                7: BackLightCmd.Light_Round,
+                8: BackLightCmd.Light_Cover
             }
             mapped_mode = mode_map_back.get(idx, BackLightCmd.Light_AlwaysOn)
             if idx == 0:
