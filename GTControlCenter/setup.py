@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="byd-controlcenter-linux",
+    name="gt-controlcenter-linux",
     version="1.0.0",
     packages=find_packages(),
     install_requires=[
@@ -11,7 +11,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'byd-controlcenter = controlcenter.app:main'
+            'gt-controlcenter = controlcenter.app:main'
         ]
     }
 )

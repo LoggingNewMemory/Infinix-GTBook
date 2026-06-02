@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 
 class ACPIWmi:
     """
-    ACPI-WMI Bridge for BYD Control Center.
+    ACPI-WMI Bridge for GT Control Center.
     Maps to the Windows \root\wmi ACPIMethod class.
     GUID: 3161C7C3-489F-4074-82AE-538101CCE1C2
     """

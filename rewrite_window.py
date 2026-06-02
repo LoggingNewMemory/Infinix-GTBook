@@ -1,6 +1,6 @@
 import re
 
-with open("NewControlCenter/controlcenter/window.py", "r") as f:
+with open("GTControlCenter/controlcenter/window.py", "r") as f:
     content = f.read()
 
 # We will replace `self.setup_lighting_page()` with `self.setup_keyboard_page(); self.setup_back_zone_page()`
@@ -337,6 +337,6 @@ replacement = """
 
 new_content = content[:start_idx] + replacement + content[end_idx:]
 
-with open("NewControlCenter/controlcenter/window.py", "w") as f:
+with open("GTControlCenter/controlcenter/window.py", "w") as f:
     f.write(new_content)
 

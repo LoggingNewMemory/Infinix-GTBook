@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='byd-controlcenter',
+    name='gt-controlcenter',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

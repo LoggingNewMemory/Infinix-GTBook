@@ -3,15 +3,12 @@ cd "$(dirname "$0")"
 
 if [ ! -d "venv" ]; then
     echo "Virtual environment not found. Creating one..."
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install -r requirements.txt || pip install pyusb psutil pyserial sounddevice numpy PyGObject
+    python3 -m venv venv --system-site-packages
+    ./venv/bin/pip install pyusb psutil pyserial sounddevice numpy PyGObject pyinstaller
 else
-    source venv/bin/activate
+    # Ensure PyInstaller is installed in the existing venv
+    ./venv/bin/pip install pyinstaller
 fi
-
-# Ensure PyInstaller is installed
-pip install pyinstaller
 
 # Create an entry point script for PyInstaller
 cat << 'EOF' > run_app.py
@@ -29,7 +26,7 @@ if __name__ == '__main__':
 EOF
 
 echo "Compiling to single binary using PyInstaller..."
-pyinstaller --onefile --windowed --name byd-controlcenter \
+./venv/bin/pyinstaller --onefile --windowed --name gt-controlcenter \
     --add-data "assets:assets" \
     --add-data "controlcenter:controlcenter" \
     --hidden-import gi \

@@ -135,7 +135,7 @@ def extract_baml_resources(dll_path, output_dir):
 
 if __name__ == '__main__':
     dll_path = '/home/yamada/CODE/device_infinix_gtbook/extracted_bundle/ControlCenter.dll'
-    output_dir = '/home/yamada/CODE/device_infinix_gtbook/NewControlCenter/assets/extracted'
+    output_dir = '/home/yamada/CODE/device_infinix_gtbook/GTControlCenter/assets/extracted'
     
     if not os.path.exists(dll_path):
         print(f"DLL not found at {dll_path}")

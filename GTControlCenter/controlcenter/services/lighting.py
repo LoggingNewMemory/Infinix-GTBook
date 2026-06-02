@@ -62,7 +62,7 @@ class LightingService:
                     os.environ["PULSE_SOURCE"] = default_sink + ".monitor"
             except Exception as e:
                 logger.error(f"Failed to get pulseaudio sink: {e}")
-            audio_device = None
+            audio_device = "pulse"
         elif audio_device is not None:
             os.environ.pop("PULSE_SOURCE", None)
             

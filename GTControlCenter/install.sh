@@ -15,4 +15,4 @@ cp acpi-call-perms.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable --now acpi-call-perms.service
 
-echo "Done! The Control Center should now work without sudo."
+echo "Done! GT Control Center should now work without sudo."

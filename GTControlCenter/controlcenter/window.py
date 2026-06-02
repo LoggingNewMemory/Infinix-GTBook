@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class MainWindow(Adw.ApplicationWindow):
     def __init__(self, app):
-        super().__init__(application=app, title="BYD Control Center")
+        super().__init__(application=app, title="GT Control Center")
         self.set_default_size(1100, 750)
         
         style_manager = Adw.StyleManager.get_default()
@@ -54,7 +54,7 @@ class MainWindow(Adw.ApplicationWindow):
         
         # HeaderBar
         self.header = Adw.HeaderBar()
-        self.header.set_title_widget(Adw.WindowTitle(title="BYD Control Center"))
+        self.header.set_title_widget(Adw.WindowTitle(title="GT Control Center"))
         self.box.append(self.header)
         
         # ViewStack for tabs

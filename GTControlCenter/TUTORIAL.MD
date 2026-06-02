@@ -1,6 +1,6 @@
-# BYD Control Center for Linux - Tutorial
+# GT Control Center for Linux - Tutorial
 
-This guide explains how to install, configure, and run the BYD Control Center on your Linux system **without requiring `sudo`** every time you launch the GUI.
+This guide explains how to install, configure, and run the GT Control Center on your Linux system **without requiring `sudo`** every time you launch the GUI.
 
 ## 1. Prerequisites
 
@@ -15,7 +15,7 @@ Make sure you have the following packages installed on your system:
 
 To make the application run without `root` permissions, you need to set up rules for the hardware interfaces. This is handled automatically by the `install.sh` script.
 
-1. Open your terminal in the `NewControlCenter` directory.
+1. Open your terminal in the `GTControlCenter` directory.
 2. Make the install script executable (if it isn't already):
    ```bash
    chmod +x install.sh
@@ -33,7 +33,7 @@ To make the application run without `root` permissions, you need to set up rules
 
 To keep dependencies isolated and clean, it is recommended to run the app in a Python Virtual Environment. 
 
-Run the following commands inside the `NewControlCenter` folder:
+Run the following commands inside the `GTControlCenter` folder:
 
 ```bash
 # Create a virtual environment with access to system site-packages (required for 'gi' GTK module)
@@ -48,7 +48,7 @@ python3 -m venv venv --clear --system-site-packages
 Once installed, you can launch the app directly using the executable inside the virtual environment:
 
 ```bash
-./venv/bin/byd-controlcenter
+./venv/bin/gt-controlcenter
 ```
 
 *Tip: You can create a `.desktop` shortcut pointing to this exact path to launch it seamlessly from your desktop environment's app menu!*

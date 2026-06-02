@@ -9,7 +9,7 @@ class Program
     static void Main(string[] args)
     {
         string dllPath = "/home/yamada/CODE/device_infinix_gtbook/extracted_bundle/ControlCenter.dll";
-        string outDir = "/home/yamada/CODE/device_infinix_gtbook/NewControlCenter/assets/images";
+        string outDir = "/home/yamada/CODE/device_infinix_gtbook/GTControlCenter/assets/images";
         Directory.CreateDirectory(outDir);
 
         Assembly asm = Assembly.LoadFile(dllPath);
