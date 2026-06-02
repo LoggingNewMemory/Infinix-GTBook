@@ -1,3 +1,5 @@
 Exported/*
 *.bkp
 *.dtmp
+*/build/*
+*/dist/*
