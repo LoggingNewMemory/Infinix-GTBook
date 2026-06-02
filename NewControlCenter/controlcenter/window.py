@@ -1,7 +1,7 @@
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, GLib
+from gi.repository import Gtk, Adw, GLib, Gdk
 
 import logging
 from typing import Optional
@@ -19,7 +19,10 @@ logger = logging.getLogger(__name__)
 class MainWindow(Adw.ApplicationWindow):
     def __init__(self, app):
         super().__init__(application=app, title="BYD Control Center")
-        self.set_default_size(900, 600)
+        self.set_default_size(1100, 750)
+        
+        style_manager = Adw.StyleManager.get_default()
+        style_manager.set_color_scheme(Adw.ColorScheme.FORCE_DARK)
         
         # Initialize services
         self.wmi = ACPIWmi()
@@ -36,12 +39,22 @@ class MainWindow(Adw.ApplicationWindow):
         GLib.timeout_add(2000, self.update_monitors)
 
     def setup_ui(self):
+        css_provider = Gtk.CssProvider()
+        css = """
+        .stat-card { background-color: alpha(currentColor, 0.05); border-radius: 12px; padding: 24px; border: 1px solid alpha(currentColor, 0.1); }
+        .temp-value { font-size: 36pt; font-weight: 900; color: #30b3eb; }
+        .temp-label { font-size: 16pt; font-weight: bold; color: alpha(currentColor, 0.5); }
+        """
+        css_provider.load_from_data(css.encode())
+        Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        
         # Main layout
         self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.set_content(self.box)
         
         # HeaderBar
         self.header = Adw.HeaderBar()
+        self.header.set_title_widget(Adw.WindowTitle(title="BYD Control Center"))
         self.box.append(self.header)
         
         # ViewStack for tabs
@@ -64,22 +77,20 @@ class MainWindow(Adw.ApplicationWindow):
         page = Adw.PreferencesPage()
         
         # System Mode Group
-        mode_group = Adw.PreferencesGroup(title="System Mode")
-        mode_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        mode_group = Adw.PreferencesGroup(title="System Mode", description="Choose the performance profile")
+        mode_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        mode_box.add_css_class("linked")
         mode_box.set_halign(Gtk.Align.CENTER)
         mode_box.set_margin_top(12)
         mode_box.set_margin_bottom(12)
         
         self.btn_office = Gtk.Button(label="Office")
-        self.btn_office.add_css_class("pill")
         self.btn_office.connect("clicked", lambda x: self.set_performance_mode(1))
         
         self.btn_balance = Gtk.Button(label="Balance")
-        self.btn_balance.add_css_class("pill")
         self.btn_balance.connect("clicked", lambda x: self.set_performance_mode(2))
         
         self.btn_gaming = Gtk.Button(label="Gaming")
-        self.btn_gaming.add_css_class("pill")
         self.btn_gaming.add_css_class("suggested-action") # Default highlight
         self.btn_gaming.connect("clicked", lambda x: self.set_performance_mode(3))
         
@@ -102,24 +113,42 @@ class MainWindow(Adw.ApplicationWindow):
         page.add(mode_group)
         
         # Monitoring Group
-        mon_group = Adw.PreferencesGroup(title="System Status")
+        mon_group = Adw.PreferencesGroup(title="System Dashboard", description="Real-time component temperatures")
         
-        self.lbl_cpu_temp = Gtk.Label(label="CPU Temp: -- °C")
-        self.lbl_cpu_temp.set_halign(Gtk.Align.START)
-        self.lbl_gpu_temp = Gtk.Label(label="GPU Temp: -- °C")
-        self.lbl_gpu_temp.set_halign(Gtk.Align.START)
+        dashboard_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=24)
+        dashboard_box.set_halign(Gtk.Align.CENTER)
+        dashboard_box.set_margin_top(24)
+        dashboard_box.set_margin_bottom(24)
         
-        mon_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        mon_box.set_margin_top(12)
-        mon_box.set_margin_bottom(12)
-        mon_box.set_margin_start(12)
-        mon_box.append(self.lbl_cpu_temp)
-        mon_box.append(self.lbl_gpu_temp)
+        # CPU Card
+        cpu_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        cpu_card.add_css_class("stat-card")
+        cpu_card.set_size_request(200, -1)
+        lbl_cpu_title = Gtk.Label(label="CPU Temp")
+        lbl_cpu_title.add_css_class("temp-label")
+        self.lbl_cpu_temp = Gtk.Label(label="-- °C")
+        self.lbl_cpu_temp.add_css_class("temp-value")
+        cpu_card.append(lbl_cpu_title)
+        cpu_card.append(self.lbl_cpu_temp)
         
-        mon_group.add(mon_box)
+        # GPU Card
+        gpu_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        gpu_card.add_css_class("stat-card")
+        gpu_card.set_size_request(200, -1)
+        lbl_gpu_title = Gtk.Label(label="GPU Temp")
+        lbl_gpu_title.add_css_class("temp-label")
+        self.lbl_gpu_temp = Gtk.Label(label="-- °C")
+        self.lbl_gpu_temp.add_css_class("temp-value")
+        gpu_card.append(lbl_gpu_title)
+        gpu_card.append(self.lbl_gpu_temp)
+        
+        dashboard_box.append(cpu_card)
+        dashboard_box.append(gpu_card)
+        mon_group.add(dashboard_box)
         page.add(mon_group)
         
-        self.stack.add_titled(page, "performance", "Performance")
+        perf_page = self.stack.add_titled(page, "performance", "Performance")
+        perf_page.set_icon_name("utilities-system-monitor-symbolic")
 
     def setup_lighting_page(self):
         page = Adw.PreferencesPage()
@@ -142,8 +171,35 @@ class MainWindow(Adw.ApplicationWindow):
         
         # Color picker
         color_row = Adw.ActionRow(title="Color")
-        self.color_dialog = Gtk.ColorDialog()
-        self.color_button = Gtk.ColorDialogButton(dialog=self.color_dialog)
+        
+        self.color_button = Gtk.Button()
+        self.color_button.set_size_request(80, 45)
+        self.color_button.set_valign(Gtk.Align.CENTER)
+        
+        self.current_rgba = Gdk.RGBA()
+        self.current_rgba.parse("#FF0000")
+        
+        self.color_popover = Gtk.Popover()
+        self.color_widget = Gtk.ColorChooserWidget()
+        self.color_widget.set_size_request(600, 450)
+        self.color_widget.set_rgba(self.current_rgba)
+        
+        self.color_popover.set_child(self.color_widget)
+        self.color_popover.set_parent(self.color_button)
+        
+        def on_popover_closed(p):
+            self.current_rgba = self.color_widget.get_rgba()
+            self._update_color_button_ui(self.current_rgba)
+            
+        self.color_popover.connect("closed", on_popover_closed)
+        
+        def on_button_clicked(btn):
+            self.color_widget.set_rgba(self.current_rgba)
+            self.color_popover.popup()
+            
+        self.color_button.connect("clicked", on_button_clicked)
+        self._update_color_button_ui(self.current_rgba)
+        
         color_row.add_suffix(self.color_button)
         group.add(color_row)
         
@@ -152,6 +208,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.mode_dropdown = Gtk.DropDown.new_from_strings([
             "Off", "Static Color", "Breathing", "Neon Cycle", "Rainbow", "Flow", "Wave"
         ])
+        self.mode_dropdown.set_selected(1)
         mode_row.add_suffix(self.mode_dropdown)
         group.add(mode_row)
         
@@ -192,20 +249,34 @@ class MainWindow(Adw.ApplicationWindow):
         # Apply Group
         apply_group = Adw.PreferencesGroup()
         apply_btn = Gtk.Button(label="Apply Lighting")
-        apply_btn.set_margin_top(12)
+        apply_btn.set_margin_top(24)
+        apply_btn.set_margin_bottom(12)
         apply_btn.add_css_class("suggested-action")
+        apply_btn.add_css_class("pill")
+        apply_btn.set_halign(Gtk.Align.CENTER)
+        apply_btn.set_size_request(200, 40)
         apply_btn.connect("clicked", self.apply_lighting)
         apply_group.add(apply_btn)
         
         page.add(apply_group)
-        self.stack.add_titled(page, "lighting", "Lighting")
+        light_page = self.stack.add_titled(page, "lighting", "Lighting")
+        light_page.set_icon_name("keyboard-symbolic")
+
+    def _update_color_button_ui(self, rgba):
+        css_provider = Gtk.CssProvider()
+        css = f"* {{ background-color: {rgba.to_string()}; background-image: none; border-radius: 6px; }}"
+        css_provider.load_from_data(css.encode())
+        context = self.color_button.get_style_context()
+        context.add_provider(css_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
 
     def on_zone_changed(self, dropdown, pspec):
         zone = dropdown.get_selected()
         if zone < 5:
             self.mode_dropdown.set_model(Gtk.StringList.new(["Off", "Static Color", "Breathing", "Neon Cycle", "Rainbow", "Flow", "Wave"]))
+            self.mode_dropdown.set_selected(1)
         elif zone == 5:
             self.mode_dropdown.set_model(Gtk.StringList.new(["Off", "Static Color", "Breathing", "Rhythm", "Rainbow Rhythm", "Jump", "Round", "Cover"]))
+            self.mode_dropdown.set_selected(1)
 
     def set_performance_mode(self, mode: int):
         self.btn_office.remove_css_class("suggested-action")
@@ -246,7 +317,7 @@ class MainWindow(Adw.ApplicationWindow):
         return False
 
     def apply_lighting(self, btn):
-        color = self.color_button.get_rgba()
+        color = self.current_rgba
         hex_color = f"#{int(color.red*255):02x}{int(color.green*255):02x}{int(color.blue*255):02x}"
         
         idx = self.mode_dropdown.get_selected()
@@ -307,7 +378,7 @@ class MainWindow(Adw.ApplicationWindow):
         cpu_temp = self.monitor.get_cpu_temp()
         gpu_temp = self.monitor.get_gpu_temp()
         
-        self.lbl_cpu_temp.set_label(f"CPU Temp: {cpu_temp} °C" if cpu_temp > 0 else "CPU Temp: N/A")
-        self.lbl_gpu_temp.set_label(f"GPU Temp: {gpu_temp} °C" if gpu_temp > 0 else "GPU Temp: N/A")
+        self.lbl_cpu_temp.set_label(f"{cpu_temp} °C" if cpu_temp > 0 else "N/A")
+        self.lbl_gpu_temp.set_label(f"{gpu_temp} °C" if gpu_temp > 0 else "N/A")
         
         return True # Continue timer

@@ -123,6 +123,14 @@ class LightingService:
             fd3 = int(current_b3)
             fd4 = int(current_b4)
             
+            if mode == 4: # BackLightCmd.Light_Jump
+                overall_vol = int((current_b1 + current_b2 + current_b3 + current_b4) / 4)
+                fd1 = overall_vol
+                fd2 = 0
+                fd3 = 0
+                fd4 = overall_vol
+
+            
             if is_rainbow:
                 # Cycle hue over time (approx 5 seconds for a full cycle at ~43 fps)
                 rainbow_hue = (rainbow_hue + 0.005) % 1.0
@@ -157,7 +165,7 @@ class LightingService:
         # We'll just update the brightness state and re-apply current mode.
         pass
 
-    def set_keyboard_mode(self, mode: KeyboardLightMode, color_hex: str = "#FFFFFF", brightness: int = 255):
+    def set_keyboard_mode(self, mode: KeyboardLightMode, color_hex: str = "#FF0000", brightness: int = 255):
         """
         Sets the keyboard lighting mode and color.
         """
@@ -171,7 +179,7 @@ class LightingService:
             logger.error(f"Failed to set keyboard mode {mode.name}")
             return False
 
-    def set_zone_mode(self, command_id: int, mode_enum_val: int, color_hex: str = "#FFFFFF", brightness: int = 255):
+    def set_zone_mode(self, command_id: int, mode_enum_val: int, color_hex: str = "#FF0000", brightness: int = 255):
         r, g, b = self._hex_to_rgb(color_hex)
         packet = build_packet(command_id, mode_enum_val, size=4, r=r, g=g, b=b, l=brightness)
         if self.usb.send_data(packet):
@@ -179,7 +187,7 @@ class LightingService:
             return True
         return False
         
-    def set_serial_back_zone_mode(self, mode_enum_val: int, color_hex: str = "#FFFFFF", brightness: int = 100, sens: int = 50, smooth: int = 50):
+    def set_serial_back_zone_mode(self, mode_enum_val: int, color_hex: str = "#FF0000", brightness: int = 100, sens: int = 50, smooth: int = 50):
         r, g, b = self._hex_to_rgb(color_hex)
         from controlcenter.models.tx_buf import get_back_zone_packet, BackLightCmd
         
