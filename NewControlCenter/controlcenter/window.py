@@ -206,7 +206,7 @@ class MainWindow(Adw.ApplicationWindow):
         # Mode selector
         mode_row = Adw.ActionRow(title="Effect")
         self.mode_dropdown = Gtk.DropDown.new_from_strings([
-            "Off", "Static Color", "Breathing", "Neon Cycle", "Rainbow", "Flow", "Wave"
+            "Off", "Static Color", "Breathing", "Neon Cycle", "Rainbow", "Flow", "Wave", "Rythm Dance"
         ])
         self.mode_dropdown.set_selected(1)
         mode_row.add_suffix(self.mode_dropdown)
@@ -272,7 +272,7 @@ class MainWindow(Adw.ApplicationWindow):
     def on_zone_changed(self, dropdown, pspec):
         zone = dropdown.get_selected()
         if zone < 5:
-            self.mode_dropdown.set_model(Gtk.StringList.new(["Off", "Static Color", "Breathing", "Neon Cycle", "Rainbow", "Flow", "Wave"]))
+            self.mode_dropdown.set_model(Gtk.StringList.new(["Off", "Static Color", "Breathing", "Neon Cycle", "Rainbow", "Flow", "Wave", "Rythm Dance"]))
             self.mode_dropdown.set_selected(1)
         elif zone == 5:
             self.mode_dropdown.set_model(Gtk.StringList.new(["Off", "Static Color", "Breathing", "Rhythm", "Rainbow Rhythm", "Jump", "Rainbow Jump", "Round", "Cover"]))
@@ -339,12 +339,13 @@ class MainWindow(Adw.ApplicationWindow):
                 3: KeyboardLightMode.GradualChange,
                 4: KeyboardLightMode.RainBow,
                 5: KeyboardLightMode.Flow,
-                6: KeyboardLightMode.Wave
+                6: KeyboardLightMode.Wave,
+                7: KeyboardLightMode.RythmDance
             }
             mapped_mode = mode_map.get(idx, KeyboardLightMode.Always)
             if idx == 0:
                 hex_color = "#000000"
-            self.lighting.set_keyboard_mode(mapped_mode, hex_color, brightness=brightness)
+            self.lighting.set_keyboard_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth)
         elif 1 <= zone <= 4:
             # Individual Keyboard Zones
             cmd_map = {1: 6, 2: 6, 3: 7, 4: 7}

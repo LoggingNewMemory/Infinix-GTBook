@@ -21,10 +21,10 @@ class LightingService:
         self._anim_thread = None
         self._stop_event = threading.Event()
 
-    def start_animation(self, mode, r, g, b, brightness, is_rainbow=False, sens=50, smooth=50):
+    def start_animation(self, mode, r, g, b, brightness, is_rainbow=False, sens=50, smooth=50, target="back_zone"):
         self.stop_animation()
         self._stop_event.clear()
-        self._anim_thread = threading.Thread(target=self._anim_loop, args=(mode, r, g, b, brightness, is_rainbow, sens, smooth, self._stop_event), daemon=True)
+        self._anim_thread = threading.Thread(target=self._anim_loop, args=(mode, r, g, b, brightness, is_rainbow, sens, smooth, target, self._stop_event), daemon=True)
         self._anim_thread.start()
 
     def stop_animation(self):
@@ -33,7 +33,7 @@ class LightingService:
             self._anim_thread.join(timeout=1.0)
             self._anim_thread = None
 
-    def _anim_loop(self, mode, r, g, b, brightness, is_rainbow, sens, smooth, stop_event):
+    def _anim_loop(self, mode, r, g, b, brightness, is_rainbow, sens, smooth, target, stop_event):
         from controlcenter.models.tx_buf import get_back_zone_packet
         import time
         import colorsys
@@ -139,8 +139,18 @@ class LightingService:
             else:
                 cur_r, cur_g, cur_b = r, g, b
             
-            packet = get_back_zone_packet(mode, cur_r, cur_g, cur_b, brightness, speed=1, fd1=fd1, fd2=fd2, fd3=fd3, fd4=fd4)
-            self.serial.send_data(packet)
+            if target == "back_zone":
+                packet = get_back_zone_packet(mode, cur_r, cur_g, cur_b, brightness, speed=1, fd1=fd1, fd2=fd2, fd3=fd3, fd4=fd4)
+                self.serial.send_data(packet)
+            elif target == "keyboard":
+                overall_vol = max(current_b1, current_b2, current_b3, current_b4)
+                vol_ratio = overall_vol / 255.0
+                mod_r = int(cur_r * vol_ratio)
+                mod_g = int(cur_g * vol_ratio)
+                mod_b = int(cur_b * vol_ratio)
+                
+                packet = get_keyboard_led_packet(1, mod_r, mod_g, mod_b, brightness)
+                self.usb.send_data(packet)
 
         try:
             # Blocksize 1024 = ~23ms updates (super fast ~43 fps for fluid lighting)
@@ -165,11 +175,17 @@ class LightingService:
         # We'll just update the brightness state and re-apply current mode.
         pass
 
-    def set_keyboard_mode(self, mode: KeyboardLightMode, color_hex: str = "#FF0000", brightness: int = 255):
+    def set_keyboard_mode(self, mode: KeyboardLightMode, color_hex: str = "#FF0000", brightness: int = 255, sens: int = 50, smooth: int = 50):
         """
         Sets the keyboard lighting mode and color.
         """
+        self.stop_animation()
         r, g, b = self._hex_to_rgb(color_hex)
+        
+        if mode == KeyboardLightMode.RythmDance:
+            self.start_animation(mode.value, r, g, b, brightness, is_rainbow=True, sens=sens, smooth=smooth, target="keyboard")
+            return True
+            
         packet = get_keyboard_led_packet(mode.value, r, g, b, brightness)
         
         if self.usb.send_data(packet):
