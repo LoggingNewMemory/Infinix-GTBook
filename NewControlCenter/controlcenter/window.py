@@ -249,7 +249,7 @@ class MainWindow(Adw.ApplicationWindow):
         
         mode_row = Adw.ActionRow(title="Effect")
         self.kb_mode_dropdown = Gtk.DropDown.new_from_strings([
-            "Off", "Static Color", "Breathing", "Neon Cycle", "Rainbow", "Flow", "Wave", "Rythm Dance"
+            "Off", "Static Color", "Breathing", "Neon Cycle", "Rainbow", "Flow", "Wave", "Rhythm Dance"
         ])
         self.kb_mode_dropdown.set_selected(1)
         mode_row.add_suffix(self.kb_mode_dropdown)
@@ -264,7 +264,17 @@ class MainWindow(Adw.ApplicationWindow):
         group.add(bright_row)
         
         page.add(group)
-        page.add(self._create_rhythm_group("kb"))
+        
+        self.kb_rhythm_group = self._create_rhythm_group("kb")
+        page.add(self.kb_rhythm_group)
+        self.kb_rhythm_group.set_visible(False)
+        
+        def on_kb_mode_changed(dropdown, pspec):
+            # 7 is Rhythm Dance
+            is_rhythm = dropdown.get_selected() == 7
+            self.kb_rhythm_group.set_visible(is_rhythm)
+        self.kb_mode_dropdown.connect("notify::selected", on_kb_mode_changed)
+
         
         apply_group = Adw.PreferencesGroup()
         apply_btn = Gtk.Button(label="Apply Keyboard Lighting")
@@ -333,7 +343,17 @@ class MainWindow(Adw.ApplicationWindow):
         group.add(bright_row)
         
         page.add(group)
-        page.add(self._create_rhythm_group("bz"))
+        
+        self.bz_rhythm_group = self._create_rhythm_group("bz")
+        page.add(self.bz_rhythm_group)
+        self.bz_rhythm_group.set_visible(False)
+        
+        def on_bz_mode_changed(dropdown, pspec):
+            # 3: Rhythm, 4: Rainbow Rhythm, 5: Jump, 6: Rainbow Jump
+            is_rhythm = dropdown.get_selected() in (3, 4, 5, 6)
+            self.bz_rhythm_group.set_visible(is_rhythm)
+        self.bz_mode_dropdown.connect("notify::selected", on_bz_mode_changed)
+
         
         apply_group = Adw.PreferencesGroup()
         apply_btn = Gtk.Button(label="Apply Back Zone Lighting")
@@ -424,7 +444,7 @@ class MainWindow(Adw.ApplicationWindow):
                 4: KeyboardLightMode.RainBow,
                 5: KeyboardLightMode.Flow,
                 6: KeyboardLightMode.Wave,
-                7: KeyboardLightMode.RythmDance
+                7: KeyboardLightMode.RhythmDance
             }
             mapped_mode = mode_map.get(idx, KeyboardLightMode.Always)
             if idx == 0:
