@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "90Mc2Kj4nNaFH10xPaoJnZl1fw/IhcZtYbO4HGwkOpAYAxsO7pafcgE0s3nDwC2bSRcP5DvgX3gx+JOMHwncmQ==",
+  "success": true,
+  "projectFilePath": "/home/yamada/CODE/device_infinix_gtbook/Decompilers/ResourceExtractor/ResourceExtractor.csproj",
+  "expectedPackageFiles": [
+    "/home/yamada/.nuget/packages/microsoft.aspnetcore.app.ref/8.0.27/microsoft.aspnetcore.app.ref.8.0.27.nupkg.sha512"
+  ],
+  "logs": []
+}
