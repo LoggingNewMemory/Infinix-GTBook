@@ -391,9 +391,23 @@ class MainWindow(Adw.ApplicationWindow):
 
     def on_kb_zone_changed(self, dropdown, pspec):
         zone = dropdown.get_selected()
-        # Always just set the mode to the standard keyboard modes, or you can switch modes
-        # based on individual zones if needed. Currently they share the same list.
-        pass
+        zone_str = str(zone)
+        zones_config = self.config_mgr.config.get("keyboard_zones", {})
+        
+        if zone_str in zones_config:
+            kb = zones_config[zone_str]
+            self.kb_mode_dropdown.set_selected(kb.get("mode", 1))
+            self.kb_current_rgba.parse(kb.get("color", "#FF0000"))
+            self._update_color_button_ui(self.kb_color_button, self.kb_current_rgba)
+            self.kb_brightness_scale.set_value(kb.get("brightness", 100))
+            if hasattr(self, 'kb_device_dropdown') and hasattr(self, 'kb_audio_device_ids'):
+                device_idx = kb.get("audio_device", 0)
+                if device_idx < len(self.kb_audio_device_ids):
+                    self.kb_device_dropdown.set_selected(device_idx)
+            if hasattr(self, 'kb_sens_scale'):
+                self.kb_sens_scale.set_value(kb.get("sens", 35))
+            if hasattr(self, 'kb_smooth_scale'):
+                self.kb_smooth_scale.set_value(kb.get("smooth", 0))
 
 
     def set_performance_mode(self, mode: int, save=True):
@@ -469,26 +483,58 @@ class MainWindow(Adw.ApplicationWindow):
             if idx == 0:
                 hex_color = "#000000"
             self.lighting.set_keyboard_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth, audio_device=audio_device)
+            
+            # Sync the effect to all individual zones so they don't revert if a specific zone is later configured
+            if idx <= 4:
+                cmd_map = {1: 6, 2: 6, 3: 7, 4: 7}
+                offset_map = {1: 0, 2: 4, 3: 0, 4: 4}
+                zone_mode_map = {0: 0, 1: 0, 2: 1, 3: 2, 4: 3}
+                zone_mode = zone_mode_map.get(idx, 0)
+                sync_color = "#00FF00" if idx in (3, 4) else hex_color
+                for z in range(1, 5):
+                    self.lighting.set_zone_mode(cmd_map[z], offset_map[z] | zone_mode, sync_color, brightness=brightness)
         elif 1 <= zone <= 4:
             cmd_map = {1: 6, 2: 6, 3: 7, 4: 7}
             offset_map = {1: 0, 2: 4, 3: 0, 4: 4}
             cmd = cmd_map[zone]
             offset = offset_map[zone]
             
-            param = offset | idx
+            zone_mode_map = {
+                0: 0, # Off -> Always (black)
+                1: 0, # Static Color -> Always
+                2: 1, # Breathing -> Breath
+                3: 2, # Neon Cycle -> GradualChange
+                4: 3  # Rainbow -> RainBow
+            }
+            zone_mode = zone_mode_map.get(idx, 0)
+            
+            param = offset | zone_mode
             if idx == 0:
                 hex_color = "#000000"
+            elif idx in (3, 4):
+                hex_color = "#00FF00"  # Hardware might require this specific color for animations
             self.lighting.set_zone_mode(cmd, param, hex_color, brightness=brightness)
             
-        self.config_mgr.config["keyboard"].update({
-            "zone": zone,
+        if "keyboard_zones" not in self.config_mgr.config:
+            self.config_mgr.config["keyboard_zones"] = {}
+            
+        zone_str = str(zone)
+        zone_settings = {
             "mode": idx,
             "color": hex_color if idx != 0 else f"#{int(color.red*255):02x}{int(color.green*255):02x}{int(color.blue*255):02x}",
             "brightness": brightness_pct,
             "audio_device": device_idx,
             "sens": sens,
             "smooth": smooth
-        })
+        }
+        self.config_mgr.config["keyboard_zones"][zone_str] = zone_settings
+        
+        if zone == 0:
+            for z in range(1, 5):
+                self.config_mgr.config["keyboard_zones"][str(z)] = zone_settings.copy()
+
+        self.config_mgr.config["keyboard"].update(zone_settings)
+        self.config_mgr.config["keyboard"]["zone"] = zone
         self.config_mgr.save()
 
     def apply_back_zone_lighting(self, btn):
