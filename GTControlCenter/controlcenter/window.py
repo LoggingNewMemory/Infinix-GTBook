@@ -669,6 +669,7 @@ class MainWindow(Adw.ApplicationWindow):
         img_box = Gtk.Box()
         img_box.set_hexpand(True)
         img_box.set_valign(Gtk.Align.CENTER)
+        img_box.set_halign(Gtk.Align.CENTER)
         img = Gtk.Picture.new_for_filename(os.path.join(self.assets_dir, "GTBook.png"))
         img.set_can_shrink(True)
         img_box.append(img)
