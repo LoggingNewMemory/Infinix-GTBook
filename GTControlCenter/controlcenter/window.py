@@ -135,10 +135,12 @@ class MainWindow(Adw.ApplicationWindow):
         .bar-cyan {
             background-color: #29b6f6;
             min-height: 15px;
+            transition: min-width 0.6s cubic-bezier(0.25, 1, 0.5, 1);
         }
         .bar-green {
             background-color: #66bb6a;
             min-height: 15px;
+            transition: min-width 0.6s cubic-bezier(0.25, 1, 0.5, 1);
         }
         .stat-label {
             font-size: 28px;
@@ -296,11 +298,13 @@ class MainWindow(Adw.ApplicationWindow):
             
             bar1 = Gtk.Box()
             bar1.add_css_class("bar-cyan")
+            bar1.set_halign(Gtk.Align.START)
             bar_box.append(bar1)
             
             if has_double_bar:
                 bar2 = Gtk.Box()
                 bar2.add_css_class("bar-green")
+                bar2.set_halign(Gtk.Align.START)
                 bar2.set_margin_end(60) # Simulate shorter green bar
                 bar_box.append(bar2)
             else:
@@ -367,8 +371,33 @@ class MainWindow(Adw.ApplicationWindow):
         except Exception:
             pass
 
-        cpu_row, self.cpu_bar1, self.cpu_bar2 = create_stat_row("CPU", "13th Gen Intel(R) Core(TM) i9-13900H", "lbl_cpu_freq", "lbl_cpu_temp", True)
-        gpu_row, self.gpu_bar1, self.gpu_bar2 = create_stat_row("GPU", "NVIDIA GeForce RTX 4060", "lbl_gpu_freq", "lbl_gpu_temp", True)
+        # Dynamically get CPU name
+        cpu_name = "Unknown CPU"
+        try:
+            with open("/proc/cpuinfo", "r") as f:
+                for line in f:
+                    if line.startswith("model name"):
+                        cpu_name = line.split(":", 1)[1].strip()
+                        break
+        except Exception:
+            pass
+            
+        # Dynamically get GPU name
+        gpu_name = "Unknown GPU"
+        try:
+            import pynvml
+            pynvml.nvmlInit()
+            h = pynvml.nvmlDeviceGetHandleByIndex(0)
+            name_val = pynvml.nvmlDeviceGetName(h)
+            if isinstance(name_val, bytes):
+                gpu_name = name_val.decode('utf-8')
+            else:
+                gpu_name = name_val
+        except Exception:
+            pass
+
+        cpu_row, self.cpu_bar1, self.cpu_bar2 = create_stat_row("CPU", cpu_name, "lbl_cpu_freq", "lbl_cpu_temp", True)
+        gpu_row, self.gpu_bar1, self.gpu_bar2 = create_stat_row("GPU", gpu_name, "lbl_gpu_freq", "lbl_gpu_temp", True)
         bat_row, self.bat_bar1, _ = create_stat_row("Battery", bat_name, "lbl_bat_pct", None, False)
         disk_row, self.disk_bar1, _ = create_stat_row("Disk", disk_name, "lbl_disk_pct", None, False)
         
@@ -892,11 +921,11 @@ class MainWindow(Adw.ApplicationWindow):
             disk = psutil.disk_usage('/')
             disk_pct = int(disk.percent)
         except Exception:
-            cpu_freq = 2.6
-            bat_pct = 100
-            disk_pct = 50
+            cpu_freq = 0.0
+            bat_pct = 0
+            disk_pct = 0
             
-        gpu_freq = 3.0 if gpu_temp > 0 else 0.0
+        gpu_freq = self.monitor.get_gpu_freq()
         
         self.lbl_cpu_temp.set_label(f"{cpu_temp} °C" if cpu_temp > 0 else "N/A")
         self.lbl_gpu_temp.set_label(f"{gpu_temp} °C" if gpu_temp > 0 else "Sleep")
@@ -906,16 +935,32 @@ class MainWindow(Adw.ApplicationWindow):
         self.lbl_bat_pct.set_label(f"{bat_pct}%")
         self.lbl_disk_pct.set_label(f"{disk_pct}%")
         
-        # Approximate bar widths based on 400px max width
-        self.cpu_bar1.set_size_request(int(min(1.0, cpu_freq / 5.0) * 400), -1)
-        self.cpu_bar2.set_size_request(int(min(1.0, cpu_temp / 100.0) * 400), -1)
-        self.gpu_bar1.set_size_request(int(min(1.0, gpu_freq / 3.0) * 400), -1)
-        self.gpu_bar2.set_size_request(int(min(1.0, gpu_temp / 100.0) * 400), -1)
+        self.animate_bar(self.cpu_bar1, int(min(1.0, cpu_freq / 5.0) * 400))
+        self.animate_bar(self.cpu_bar2, int(min(1.0, cpu_temp / 100.0) * 400))
+        self.animate_bar(self.gpu_bar1, int(min(1.0, gpu_freq / 3.0) * 400))
+        self.animate_bar(self.gpu_bar2, int(min(1.0, gpu_temp / 100.0) * 400))
         
-        self.bat_bar1.set_size_request(int((bat_pct / 100.0) * 400), -1)
-        self.disk_bar1.set_size_request(int((disk_pct / 100.0) * 400), -1)
+        self.animate_bar(self.bat_bar1, int((bat_pct / 100.0) * 400))
+        self.animate_bar(self.disk_bar1, int((disk_pct / 100.0) * 400))
         
         return True # Continue timer
+
+    def animate_bar(self, bar, new_width):
+        if not hasattr(bar, '_anim_target_width'):
+            bar._anim_target_width = 0
+            
+        old_width = float(bar._anim_target_width)
+        bar._anim_target_width = float(new_width)
+        
+        def on_anim_tick(val, *args):
+            bar.set_size_request(int(val), -1)
+            
+        target = Adw.CallbackAnimationTarget.new(on_anim_tick)
+        anim = Adw.TimedAnimation.new(bar, old_width, float(new_width), 800, target)
+        anim.set_easing(Adw.Easing.EASE_OUT_CUBIC)
+        anim.play()
+        # Keep a reference to prevent garbage collection stopping the animation early
+        bar._current_anim = anim
 
     def load_settings(self):
         conf = self.config_mgr.config

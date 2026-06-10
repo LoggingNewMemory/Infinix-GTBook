@@ -14,6 +14,10 @@ class ControlCenterApp(Adw.Application):
                          flags=Gio.ApplicationFlags.FLAGS_NONE)
         self.win = None
 
+    def do_startup(self):
+        Adw.Application.do_startup(self)
+        Adw.StyleManager.get_default().set_color_scheme(Adw.ColorScheme.PREFER_DARK)
+
     def do_activate(self):
         if not self.win:
             self.win = MainWindow(self)

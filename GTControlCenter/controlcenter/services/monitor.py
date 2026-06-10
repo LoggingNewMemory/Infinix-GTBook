@@ -80,6 +80,16 @@ class MonitorService:
                 pass
         return 0
 
+    def get_gpu_freq(self) -> float:
+        if self._nvml_initialized:
+            try:
+                # NVML returns frequency in MHz, we want GHz
+                clock_mhz = pynvml.nvmlDeviceGetClockInfo(self.gpu_handle, pynvml.NVML_CLOCK_GRAPHICS)
+                return clock_mhz / 1000.0
+            except Exception:
+                pass
+        return 0.0
+
     def __del__(self):
         if self._nvml_initialized:
             try:
