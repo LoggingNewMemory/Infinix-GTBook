@@ -12,6 +12,12 @@ class ControlCenterApp(Adw.Application):
     def __init__(self):
         super().__init__(application_id='com.byd.controlcenter',
                          flags=Gio.ApplicationFlags.FLAGS_NONE)
+                         
+        # Suppress Adwaita warning if user's environment has prefer-dark-theme set globally
+        settings = Gtk.Settings.get_default()
+        if settings:
+            settings.set_property("gtk-application-prefer-dark-theme", False)
+            
         self.win = None
 
     def do_startup(self):
