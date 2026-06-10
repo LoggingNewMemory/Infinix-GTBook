@@ -535,7 +535,7 @@ class MainWindow(Adw.ApplicationWindow):
         ctrl_box.append(self._create_control_row("Color", self.kb_color_button))
         
         self.kb_mode_dropdown = Gtk.DropDown.new_from_strings([
-            "Off", "Static Color", "Breathing", "Neon Cycle", "Rainbow", "Flow", "Wave", "Rhythm Dance"
+            "Off", "Static Color", "Breathing", "Neon Cycle", "Ocean Waves", "Rainbow", "Flow", "Wave", "Rhythm Dance"
         ])
         self.kb_mode_dropdown.set_size_request(260, -1)
         self.kb_mode_dropdown.add_css_class("custom-dropdown")
@@ -741,6 +741,15 @@ class MainWindow(Adw.ApplicationWindow):
     def on_kb_zone_changed(self, dropdown, pspec):
         zone = dropdown.get_selected()
         
+        if zone == 0:
+            self.kb_mode_dropdown.set_model(Gtk.StringList.new([
+                "Off", "Static Color", "Breathing", "Neon Cycle", "Ocean Waves", "Rainbow", "Flow", "Wave", "Rhythm Dance"
+            ]))
+        else:
+            self.kb_mode_dropdown.set_model(Gtk.StringList.new([
+                "Off", "Static Color", "Breathing", "Neon Cycle", "Rainbow"
+            ]))
+            
         # Update preview image
         images = [
             "keyboard_all.png",
@@ -835,25 +844,31 @@ class MainWindow(Adw.ApplicationWindow):
                 1: KeyboardLightMode.Always,
                 2: KeyboardLightMode.Breath,
                 3: KeyboardLightMode.GradualChange,
-                4: KeyboardLightMode.RainBow,
-                5: KeyboardLightMode.Flow,
-                6: KeyboardLightMode.Wave,
-                7: KeyboardLightMode.RhythmDance
+                4: KeyboardLightMode.GradualChange,
+                5: KeyboardLightMode.RainBow,
+                6: KeyboardLightMode.Flow,
+                7: KeyboardLightMode.Wave,
+                8: KeyboardLightMode.RhythmDance
             }
             mapped_mode = mode_map.get(idx, KeyboardLightMode.Always)
             if idx == 0:
                 hex_color = "#000000"
-            self.lighting.set_keyboard_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth, audio_device=audio_device)
-            
+            elif idx in (3, 4, 5, 6, 7):
+                hex_color = "#FFFFFF"
+
             # Sync the effect to all individual zones so they don't revert if a specific zone is later configured
-            if idx <= 4:
+            if idx <= 5:
                 cmd_map = {1: 6, 2: 6, 3: 7, 4: 7}
                 offset_map = {1: 0, 2: 4, 3: 0, 4: 4}
-                zone_mode_map = {0: 0, 1: 0, 2: 1, 3: 2, 4: 3}
+                zone_mode_map = {0: 0, 1: 0, 2: 1, 3: 2, 4: 2, 5: 3}
                 zone_mode = zone_mode_map.get(idx, 0)
-                sync_color = "#00FF00" if idx in (3, 4) else hex_color
+                sync_color = hex_color
                 for z in range(1, 5):
                     self.lighting.set_zone_mode(cmd_map[z], offset_map[z] | zone_mode, sync_color, brightness=brightness)
+            
+            if idx != 4:
+                self.lighting.set_keyboard_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth, audio_device=audio_device)
+
         elif 1 <= zone <= 4:
             cmd_map = {1: 6, 2: 6, 3: 7, 4: 7}
             offset_map = {1: 0, 2: 4, 3: 0, 4: 4}
@@ -873,7 +888,7 @@ class MainWindow(Adw.ApplicationWindow):
             if idx == 0:
                 hex_color = "#000000"
             elif idx in (3, 4):
-                hex_color = "#00FF00"  # Hardware might require this specific color for animations
+                hex_color = "#FFFFFF"  # Hardware requires white color for full-spectrum animations
             self.lighting.set_zone_mode(cmd, param, hex_color, brightness=brightness)
             
         if "keyboard_zones" not in self.config_mgr.config:
