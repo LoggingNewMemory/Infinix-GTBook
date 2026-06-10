@@ -5,6 +5,8 @@ from gi.repository import Gtk, Adw, GLib, Gdk
 
 import logging
 from typing import Optional
+import os
+import sys
 
 from controlcenter.models.tx_buf import KeyboardLightMode, KeyboardLight12Mode, BackLightCmd, FanCtrlMode
 from controlcenter.services.acpi_wmi import ACPIWmi
@@ -22,6 +24,17 @@ class MainWindow(Adw.ApplicationWindow):
     def __init__(self, app):
         super().__init__(application=app, title="GT Control Center")
         self.set_default_size(1100, 750)
+        
+        # Set up application icon
+        if hasattr(sys, '_MEIPASS'):
+            assets_dir = os.path.join(sys._MEIPASS, 'assets')
+        else:
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            assets_dir = os.path.join(base_dir, 'assets')
+            
+        theme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default())
+        theme.add_search_path(assets_dir)
+        self.set_icon_name("icon")
         
         style_manager = Adw.StyleManager.get_default()
         style_manager.set_color_scheme(Adw.ColorScheme.FORCE_DARK)
@@ -583,7 +596,7 @@ class MainWindow(Adw.ApplicationWindow):
         gpu_temp = self.monitor.get_gpu_temp()
         
         self.lbl_cpu_temp.set_label(f"{cpu_temp} °C" if cpu_temp > 0 else "N/A")
-        self.lbl_gpu_temp.set_label(f"{gpu_temp} °C" if gpu_temp > 0 else "N/A")
+        self.lbl_gpu_temp.set_label(f"{gpu_temp} °C" if gpu_temp > 0 else "Sleep")
         
         return True # Continue timer
 

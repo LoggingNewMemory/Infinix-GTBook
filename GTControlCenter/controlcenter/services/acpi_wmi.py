@@ -1,42 +1,72 @@
 import struct
 import logging
+import threading
+import time
 
 logger = logging.getLogger(__name__)
 
 class ACPIWmi:
-    """
+    r"""
     ACPI-WMI Bridge for GT Control Center.
     Maps to the Windows \root\wmi ACPIMethod class.
     GUID: 3161C7C3-489F-4074-82AE-538101CCE1C2
     """
     def __init__(self):
         self._is_mock = True
+        self._lock = threading.Lock()
         logger.info("Initializing ACPI WMI service (Mock Mode)")
         
-    def _call_wmi_method(self, method_id: int, in_data: bytearray) -> int:
+    def _call_wmi_method(self, method_id: int, in_data: bytearray, retries=3) -> int:
         # Format bytearray to {0xXX, 0xXX, ...} string
         buf_str = "{" + ", ".join([f"0x{b:02X}" for b in in_data]) + "}"
         cmd = f"\\_SB.AMW0.WMBA 0 {method_id} {buf_str}"
         
-        try:
-            with open("/proc/acpi/call", "w") as f:
-                f.write(cmd)
-            with open("/proc/acpi/call", "r") as f:
-                result = f.read().strip('\x00').strip()
-                
-            if result == "Error: AE_NOT_FOUND" or "Error" in result:
-                logger.error(f"acpi_call failed: {result}")
+        for attempt in range(retries):
+            try:
+                with self._lock:
+                    with open("/proc/acpi/call", "w") as f:
+                        f.write(cmd)
+                    with open("/proc/acpi/call", "r") as f:
+                        result = f.read().strip('\x00').strip()
+                        
+                if result == "Error: AE_NOT_FOUND" or "Error" in result:
+                    if attempt < retries - 1:
+                        time.sleep(0.1)
+                        continue
+                    logger.error(f"acpi_call failed: {result}")
+                    return 0
+                    
+                if not result:
+                    if attempt < retries - 1:
+                        time.sleep(0.1)
+                        continue
+                    return 0
+                    
+                if result.startswith("0x"):
+                    val = int(result, 16)
+                else:
+                    val = int(result)
+                    
+                if val > 0:
+                    return val
+                elif attempt < retries - 1:
+                    time.sleep(0.1)
+                    continue
+                return val
+                    
+            except PermissionError:
+                logger.error("Permission denied to /proc/acpi/call. Run with sudo or set up udev rules.")
+                return 0
+            except FileNotFoundError:
+                logger.error("acpi_call module not loaded. 'sudo modprobe acpi_call'")
+                return 0
+            except ValueError:
+                if attempt < retries - 1:
+                    time.sleep(0.1)
+                    continue
                 return 0
                 
-            if result.startswith("0x"):
-                return int(result, 16)
-            return int(result)
-        except PermissionError:
-            logger.error("Permission denied to /proc/acpi/call. Run with sudo or set up udev rules.")
-            return 0
-        except FileNotFoundError:
-            logger.error("acpi_call module not loaded. 'sudo modprobe acpi_call'")
-            return 0
+        return 0
 
     def do_method(self, cmd: int) -> int:
         """

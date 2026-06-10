@@ -37,13 +37,14 @@ class MonitorService:
         # Fallback to psutil
         try:
             temps = psutil.sensors_temperatures()
-            if 'coretemp' in temps:
+            if 'coretemp' in temps and len(temps['coretemp']) > 0:
                 return int(temps['coretemp'][0].current)
-            elif 'k10temp' in temps:
+            elif 'k10temp' in temps and len(temps['k10temp']) > 0:
                 return int(temps['k10temp'][0].current)
-            elif 'acpitz' in temps:
+            elif 'acpitz' in temps and len(temps['acpitz']) > 0:
                 return int(temps['acpitz'][0].current)
-        except Exception:
+        except Exception as e:
+            logger.warning(f"Failed to read CPU temp from psutil: {e}")
             pass
             
         return 0
@@ -54,8 +55,11 @@ class MonitorService:
         """
         if self._nvml_initialized:
             try:
-                return pynvml.nvmlDeviceGetTemperature(self.gpu_handle, pynvml.NVML_TEMPERATURE_GPU)
-            except Exception:
+                temp = int(pynvml.nvmlDeviceGetTemperature(self.gpu_handle, pynvml.NVML_TEMPERATURE_GPU))
+                if temp > 0:
+                    return temp
+            except Exception as e:
+                # NVML usually throws an error if the GPU is in D3cold sleep state
                 pass
                 
         try:

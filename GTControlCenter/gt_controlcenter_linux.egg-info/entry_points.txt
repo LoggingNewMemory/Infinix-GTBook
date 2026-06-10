@@ -1,0 +1,2 @@
+[console_scripts]
+gt-controlcenter = controlcenter.app:main

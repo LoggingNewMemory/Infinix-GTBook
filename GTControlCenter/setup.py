@@ -7,7 +7,8 @@ setup(
     install_requires=[
         "pyusb",
         "psutil",
-        "pyserial"
+        "pyserial",
+        "nvidia-ml-py"
     ],
     entry_points={
         'console_scripts': [
