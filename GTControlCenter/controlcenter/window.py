@@ -28,7 +28,8 @@ def load_custom_font(font_path):
 class MainWindow(Adw.ApplicationWindow):
     def __init__(self, app):
         super().__init__(application=app, title="INFINIX - GT BOOK")
-        self.set_default_size(1100, 700)
+        self.set_default_size(1280, 720)
+        self.set_resizable(False)
         
         if hasattr(sys, '_MEIPASS'):
             self.assets_dir = os.path.join(sys._MEIPASS, 'assets')
@@ -205,6 +206,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.header = Adw.HeaderBar()
         self.header.set_show_title(False)
         self.header.set_show_start_title_buttons(False)
+        self.header.set_decoration_layout(":close")
         
         title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         img_icon = Gtk.Image.new_from_file(os.path.join(self.assets_dir, "icon.png"))
@@ -467,6 +469,7 @@ class MainWindow(Adw.ApplicationWindow):
         lbl.add_css_class("control-label")
         lbl.set_size_request(140, -1)
         lbl.set_halign(Gtk.Align.START)
+        lbl.set_xalign(0.0)
         row.append(lbl)
         widget.set_hexpand(True)
         widget.set_valign(Gtk.Align.CENTER)
@@ -474,13 +477,16 @@ class MainWindow(Adw.ApplicationWindow):
         return row
 
     def setup_keyboard_page(self):
-        page = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
+        page = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20)
         
         img_box = Gtk.Box()
-        img_box.set_hexpand(True)
+        img_box.set_size_request(400, 300)
+        img_box.set_hexpand(False)
         img_box.set_valign(Gtk.Align.CENTER)
         self.kb_preview_img = Gtk.Picture.new_for_filename(os.path.join(self.assets_dir, "keyboard_all.png"))
-        self.kb_preview_img.set_can_shrink(True)
+        self.kb_preview_img.set_can_shrink(False)
+        self.kb_preview_img.set_size_request(400, 300)
+        self.kb_preview_img.set_halign(Gtk.Align.CENTER)
         img_box.append(self.kb_preview_img)
         page.append(img_box)
         
@@ -490,12 +496,14 @@ class MainWindow(Adw.ApplicationWindow):
         
         ctrl_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         ctrl_box.set_valign(Gtk.Align.CENTER)
-        ctrl_box.set_size_request(450, -1)
+        ctrl_box.set_hexpand(True)
+        ctrl_box.set_size_request(450, 500)
         
         self.kb_zone_dropdown = Gtk.DropDown.new_from_strings([
             "Main Keyboard (All)", "Keyboard Zone 1 (Left)", "Keyboard Zone 2 (Mid-Left)", 
             "Keyboard Zone 3 (Mid-Right)", "Keyboard Zone 4 (Right)"
         ])
+        self.kb_zone_dropdown.set_size_request(260, -1)
         self.kb_zone_dropdown.add_css_class("custom-dropdown")
         self.kb_zone_dropdown.connect("notify::selected", self.on_kb_zone_changed)
         ctrl_box.append(self._create_control_row("Zone", self.kb_zone_dropdown))
@@ -529,6 +537,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.kb_mode_dropdown = Gtk.DropDown.new_from_strings([
             "Off", "Static Color", "Breathing", "Neon Cycle", "Rainbow", "Flow", "Wave", "Rhythm Dance"
         ])
+        self.kb_mode_dropdown.set_size_request(260, -1)
         self.kb_mode_dropdown.add_css_class("custom-dropdown")
         ctrl_box.append(self._create_control_row("Effects", self.kb_mode_dropdown))
         
