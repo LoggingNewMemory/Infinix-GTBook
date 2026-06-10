@@ -479,9 +479,9 @@ class MainWindow(Adw.ApplicationWindow):
         img_box = Gtk.Box()
         img_box.set_hexpand(True)
         img_box.set_valign(Gtk.Align.CENTER)
-        img = Gtk.Picture.new_for_filename(os.path.join(self.assets_dir, "keyboard_all.png"))
-        img.set_can_shrink(True)
-        img_box.append(img)
+        self.kb_preview_img = Gtk.Picture.new_for_filename(os.path.join(self.assets_dir, "keyboard_all.png"))
+        self.kb_preview_img.set_can_shrink(True)
+        img_box.append(self.kb_preview_img)
         page.append(img_box)
         
         sep = Gtk.Box()
@@ -730,6 +730,18 @@ class MainWindow(Adw.ApplicationWindow):
 
     def on_kb_zone_changed(self, dropdown, pspec):
         zone = dropdown.get_selected()
+        
+        # Update preview image
+        images = [
+            "keyboard_all.png",
+            "keyboard_left.png",
+            "keyboard_mid_left.png",
+            "keyboard_mid_right.png",
+            "keyboard_right.png"
+        ]
+        if hasattr(self, 'kb_preview_img') and zone < len(images):
+            self.kb_preview_img.set_filename(os.path.join(self.assets_dir, images[zone]))
+            
         zone_str = str(zone)
         zones_config = self.config_mgr.config.get("keyboard_zones", {})
         
