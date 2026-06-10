@@ -14,6 +14,16 @@ from controlcenter.services.lighting import LightingService
 from controlcenter.services.fan_service import FanService
 from controlcenter.services.monitor import MonitorService
 from controlcenter.services.config import ConfigManager
+import ctypes
+
+def load_custom_font(font_path):
+    try:
+        fontconfig = ctypes.CDLL('libfontconfig.so.1')
+        fontconfig.FcConfigAppFontAddFile.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+        fontconfig.FcConfigAppFontAddFile.restype = ctypes.c_int
+        return fontconfig.FcConfigAppFontAddFile(None, font_path.encode('utf-8')) != 0
+    except Exception:
+        return False
 
 class MainWindow(Adw.ApplicationWindow):
     def __init__(self, app):
@@ -30,6 +40,10 @@ class MainWindow(Adw.ApplicationWindow):
         theme.add_search_path(self.assets_dir)
         self.set_icon_name("icon")
         
+        load_custom_font(os.path.join(self.assets_dir, "InfinixDisplay-Regular.ttf"))
+        load_custom_font(os.path.join(self.assets_dir, "HarmonyOS_Sans_Regular.ttf"))
+        load_custom_font(os.path.join(self.assets_dir, "HarmonyOS_Sans_Light.ttf"))
+        
         self.setup_css()
         
         self.wmi = ACPIWmi()
@@ -45,6 +59,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.load_settings()
         self.apply_all_settings()
         
+        # Populate data immediately before window is shown
+        self.update_monitors()
         GLib.timeout_add(2000, self.update_monitors)
 
     def setup_css(self):
@@ -53,7 +69,7 @@ class MainWindow(Adw.ApplicationWindow):
         window {
             background-color: #272727;
             color: #ffffff;
-            font-family: "Infinix Display", sans-serif;
+            font-family: "HarmonyOS Sans", sans-serif;
         }
         headerbar {
             background-color: #272727;
@@ -65,6 +81,7 @@ class MainWindow(Adw.ApplicationWindow):
             background-color: transparent;
         }
         .header-title {
+            font-family: "Infinix Display", sans-serif;
             font-size: 24px;
             font-weight: bold;
             color: white;
@@ -185,10 +202,10 @@ class MainWindow(Adw.ApplicationWindow):
         title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         img_icon = Gtk.Image.new_from_file(os.path.join(self.assets_dir, "icon.png"))
         img_icon.set_pixel_size(32)
-        lbl_title = Gtk.Label(label="INFINIX - GT BOOK")
-        lbl_title.add_css_class("header-title")
+        self.lbl_title = Gtk.Label(label="INFINIX - GT BOOK")
+        self.lbl_title.add_css_class("header-title")
         title_box.append(img_icon)
-        title_box.append(lbl_title)
+        title_box.append(self.lbl_title)
         
         self.header.set_title_widget(title_box)
         
@@ -239,12 +256,20 @@ class MainWindow(Adw.ApplicationWindow):
             b.remove_css_class("active")
         btn.add_css_class("active")
         self.stack.set_visible_child_name(page_id)
+        
+        if page_id == "keyboard":
+            self.lbl_title.set_label("INFINIX - KEYBOARD")
+        elif page_id == "backzone":
+            self.lbl_title.set_label("INFINIX - BACKZONE")
+        else:
+            self.lbl_title.set_label("INFINIX - GT BOOK")
 
     def setup_overview_page(self):
         page = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         
         left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=30)
-        left_box.set_hexpand(True)
+        left_box.set_size_request(600, -1)
+        left_box.set_hexpand(False)
         left_box.set_valign(Gtk.Align.CENTER)
         
         def create_stat_row(title, sub, val1_id, val2_id, has_double_bar=True):
@@ -363,6 +388,7 @@ class MainWindow(Adw.ApplicationWindow):
         
         right_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         right_box.set_valign(Gtk.Align.START)
+        right_box.set_hexpand(True)
         right_box.set_size_request(300, -1)
         right_box.set_margin_top(40)
         
@@ -687,18 +713,18 @@ class MainWindow(Adw.ApplicationWindow):
 
 
     def set_performance_mode(self, mode: int, save=True):
-        self.btn_office.remove_css_class("suggested-action")
-        self.btn_balance.remove_css_class("suggested-action")
-        self.btn_gaming.remove_css_class("suggested-action")
+        self.btn_office.remove_css_class("active")
+        self.btn_balance.remove_css_class("active")
+        self.btn_gaming.remove_css_class("active")
         
         if mode == 1:
-            self.btn_office.add_css_class("suggested-action")
+            self.btn_office.add_css_class("active")
             target_fan_mode = FanCtrlMode.OfficeMode
         elif mode == 2:
-            self.btn_balance.add_css_class("suggested-action")
+            self.btn_balance.add_css_class("active")
             target_fan_mode = FanCtrlMode.PerformanceMode
         else:
-            self.btn_gaming.add_css_class("suggested-action")
+            self.btn_gaming.add_css_class("active")
             target_fan_mode = FanCtrlMode.GamingMode
             
         self.fan.set_performance_mode(mode)
