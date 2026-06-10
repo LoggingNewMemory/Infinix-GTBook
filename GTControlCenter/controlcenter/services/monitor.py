@@ -1,4 +1,3 @@
-import logging
 import psutil
 try:
     import pynvml
@@ -8,7 +7,6 @@ except ImportError:
 
 from controlcenter.services.acpi_wmi import ACPIWmi
 
-logger = logging.getLogger(__name__)
 
 class MonitorService:
     def __init__(self, wmi_service: ACPIWmi):
@@ -21,7 +19,7 @@ class MonitorService:
                 self._nvml_initialized = True
                 self.gpu_handle = pynvml.nvmlDeviceGetHandleByIndex(0)
             except Exception as e:
-                logger.warning(f"Could not initialize NVML: {e}")
+                pass
 
     def get_cpu_temp(self) -> int:
         """
@@ -44,7 +42,6 @@ class MonitorService:
             elif 'acpitz' in temps and len(temps['acpitz']) > 0:
                 return int(temps['acpitz'][0].current)
         except Exception as e:
-            logger.warning(f"Failed to read CPU temp from psutil: {e}")
             pass
             
         return 0

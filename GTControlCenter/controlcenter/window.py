@@ -3,7 +3,6 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Gdk
 
-import logging
 from typing import Optional
 import os
 import sys
@@ -17,7 +16,6 @@ from controlcenter.services.fan_service import FanService
 from controlcenter.services.monitor import MonitorService
 from controlcenter.services.config import ConfigManager
 
-logger = logging.getLogger(__name__)
 
 
 class MainWindow(Adw.ApplicationWindow):

@@ -1,9 +1,7 @@
-import logging
 import usb.core
 import usb.util
 from typing import Optional, Tuple
 
-logger = logging.getLogger(__name__)
 
 VID = 0x340E  # 13326
 PID = 0x8002  # 32770
@@ -22,7 +20,6 @@ class USBService:
         try:
             self.dev = usb.core.find(idVendor=VID, idProduct=PID)
             if self.dev is None:
-                logger.error("BYD USB Controller not found.")
                 return False
                 
             # Detach kernel driver if necessary
@@ -30,25 +27,18 @@ class USBService:
                 try:
                     self.dev.detach_kernel_driver(self.interface)
                 except usb.core.USBError as e:
-                    logger.error(f"Could not detach kernel driver: {e}")
                     return False
                     
             usb.util.claim_interface(self.dev, self.interface)
-            logger.info("Successfully connected to BYD USB Controller.")
             return True
             
         except usb.core.USBError as e:
-            if e.errno == 13: # Permission denied
-                logger.error("Permission denied to access USB device. Need udev rules.")
-            else:
-                logger.error(f"USB connection error: {e}")
             return False
 
     def disconnect(self):
         if self.dev is not None:
             usb.util.dispose_resources(self.dev)
             self.dev = None
-            logger.info("Disconnected from USB Controller.")
 
     def send_data(self, data: bytearray) -> bool:
         """
@@ -63,7 +53,6 @@ class USBService:
             bytes_written = self.dev.write(self.ep_out, data, timeout=3000)
             return bytes_written == len(data)
         except usb.core.USBError as e:
-            logger.error(f"Failed to send USB data: {e}")
             self.disconnect() # Force reconnect on next try
             return False
 
@@ -80,6 +69,5 @@ class USBService:
             data = self.dev.read(self.ep_in, 64, timeout=timeout)
             return bytearray(data)
         except usb.core.USBError as e:
-            logger.error(f"Failed to receive USB data: {e}")
             self.disconnect()
             return None

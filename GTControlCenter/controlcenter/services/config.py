@@ -1,9 +1,7 @@
 import json
 import os
-import logging
 from pathlib import Path
 
-logger = logging.getLogger(__name__)
 
 class ConfigManager:
     def __init__(self, filename="GTControl.txt"):
@@ -49,14 +47,14 @@ class ConfigManager:
                         else:
                             self.config[k] = v
             except Exception as e:
-                logger.error(f"Failed to load config: {e}")
+                pass
 
     def save(self):
         try:
             with open(self.filepath, 'w') as f:
                 json.dump(self.config, f, indent=4)
         except Exception as e:
-            logger.error(f"Failed to save config: {e}")
+            pass
 
     def reset(self):
         self.config = self.get_default_config()

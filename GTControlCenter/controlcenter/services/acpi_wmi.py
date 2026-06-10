@@ -1,9 +1,7 @@
 import struct
-import logging
 import threading
 import time
 
-logger = logging.getLogger(__name__)
 
 class ACPIWmi:
     r"""
@@ -14,7 +12,6 @@ class ACPIWmi:
     def __init__(self):
         self._is_mock = True
         self._lock = threading.Lock()
-        logger.info("Initializing ACPI WMI service (Mock Mode)")
         
     def _call_wmi_method(self, method_id: int, in_data: bytearray, retries=3) -> int:
         # Format bytearray to {0xXX, 0xXX, ...} string
@@ -33,7 +30,6 @@ class ACPIWmi:
                     if attempt < retries - 1:
                         time.sleep(0.1)
                         continue
-                    logger.error(f"acpi_call failed: {result}")
                     return 0
                     
                 if not result:
@@ -55,10 +51,8 @@ class ACPIWmi:
                 return val
                     
             except PermissionError:
-                logger.error("Permission denied to /proc/acpi/call. Run with sudo or set up udev rules.")
                 return 0
             except FileNotFoundError:
-                logger.error("acpi_call module not loaded. 'sudo modprobe acpi_call'")
                 return 0
             except ValueError:
                 if attempt < retries - 1:

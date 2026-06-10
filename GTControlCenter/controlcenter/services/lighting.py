@@ -1,4 +1,3 @@
-import logging
 from typing import Tuple
 import threading
 import time
@@ -12,7 +11,6 @@ from controlcenter.models.tx_buf import (
 from controlcenter.services.usb_service import USBService
 from controlcenter.services.serial_service import SerialService
 
-logger = logging.getLogger(__name__)
 
 class LightingService:
     def __init__(self, usb_service: USBService, serial_service: SerialService):
@@ -61,7 +59,7 @@ class LightingService:
                 if default_sink:
                     os.environ["PULSE_SOURCE"] = default_sink + ".monitor"
             except Exception as e:
-                logger.error(f"Failed to get pulseaudio sink: {e}")
+                pass
             audio_device = "pulse"
         elif audio_device is not None:
             os.environ.pop("PULSE_SOURCE", None)
@@ -70,7 +68,6 @@ class LightingService:
             import sounddevice as sd
             import numpy as np
         except ImportError:
-            logger.error("sounddevice or numpy not installed. Cannot use real audio rhythm.")
             return
 
         current_b1 = 0.0
@@ -179,7 +176,7 @@ class LightingService:
                 while not stop_event.is_set():
                     stop_event.wait(0.5)
         except Exception as e:
-            logger.error(f"Audio capture failed: {e}")
+            pass
 
     def _hex_to_rgb(self, hex_color: str) -> Tuple[int, int, int]:
         hex_color = hex_color.lstrip('#')
@@ -218,17 +215,14 @@ class LightingService:
         packet = get_keyboard_led_packet(mode.value, r, g, b, brightness)
         
         if self.usb.send_data(packet):
-            logger.info(f"Set keyboard mode {mode.name} with color {color_hex} brightness {brightness}")
             return True
         else:
-            logger.error(f"Failed to set keyboard mode {mode.name}")
             return False
 
     def set_zone_mode(self, command_id: int, mode_enum_val: int, color_hex: str = "#FF0000", brightness: int = 255):
         r, g, b = self._hex_to_rgb(color_hex)
         packet = build_packet(command_id, mode_enum_val, size=4, r=r, g=g, b=b, l=brightness)
         if self.usb.send_data(packet):
-            logger.info(f"Set zone {command_id} mode {mode_enum_val} color {color_hex}")
             return True
         return False
         
@@ -268,7 +262,6 @@ class LightingService:
             
         packet = get_back_zone_packet(mode_enum_val, r, g, b, brightness, speed=speed, fd1=fd1, fd2=fd2, fd3=fd3, fd4=fd4)
         if self.serial.send_data(packet):
-            logger.info(f"Set serial back zone mode {mode_enum_val} color {color_hex} speed {speed}")
             return True
         return False
 
@@ -278,7 +271,6 @@ class LightingService:
         """
         packet = get_keyboard_save_packet()
         if self.usb.send_data(packet):
-            logger.info("Saved keyboard settings to device.")
             return True
         return False
         

@@ -1,6 +1,5 @@
 import sys
 import gi
-import logging
 
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
@@ -8,7 +7,6 @@ from gi.repository import Gtk, Adw, Gio
 
 from controlcenter.window import MainWindow
 
-logging.basicConfig(level=logging.INFO, format='%(name)s [%(levelname)s] %(message)s')
 
 class ControlCenterApp(Adw.Application):
     def __init__(self):
