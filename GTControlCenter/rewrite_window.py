@@ -1,4 +1,21 @@
-import gi
+import re
+
+def rewrite_window():
+    with open('/home/yamada/CODE/device_infinix_gtbook/GTControlCenter/controlcenter/window.py', 'r') as f:
+        old_content = f.read()
+        
+    match = re.search(r'(    def set_performance_mode\(self, mode: int, save=True\):.*)', old_content, re.DOTALL)
+    if not match:
+        print("Could not find logic methods")
+        return
+        
+    logic_content = match.group(1)
+    
+    match_ui = re.search(r'(    def _update_color_button_ui\(self, button, rgba\):.*?)(    def set_performance_mode)', old_content, re.DOTALL)
+    if match_ui:
+        logic_content = match_ui.group(1) + logic_content
+        
+    new_ui = """import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, GLib, Gdk, Pango
@@ -302,50 +319,10 @@ class MainWindow(Adw.ApplicationWindow):
             
             return row, bar1, bar2
             
-        # Dynamically get battery name
-        bat_name = "Internal Battery"
-        try:
-            import os
-            for bat in os.listdir("/sys/class/power_supply"):
-                if bat.startswith("BAT"):
-                    try:
-                        with open(f"/sys/class/power_supply/{bat}/model_name", "r") as f:
-                            bat_name = f.read().strip()
-                        with open(f"/sys/class/power_supply/{bat}/manufacturer", "r") as f:
-                            bat_man = f.read().strip()
-                        if bat_man:
-                            bat_name = f"{bat_man} {bat_name}"
-                    except Exception:
-                        pass
-                    break
-        except Exception:
-            pass
-
-        # Dynamically get disk name
-        disk_name = "Primary SSD"
-        try:
-            import os, re
-            with open("/proc/mounts", "r") as f:
-                for line in f:
-                    if " / " in line:
-                        dev = line.split(" ")[0]
-                        if dev.startswith("/dev/"):
-                            dev_name = os.path.basename(dev)
-                            if dev_name.startswith("nvme"):
-                                dev_name = re.sub(r"p\d+$", "", dev_name)
-                            else:
-                                dev_name = re.sub(r"\d+$", "", dev_name)
-                            if os.path.exists(f"/sys/block/{dev_name}/device/model"):
-                                with open(f"/sys/block/{dev_name}/device/model", "r") as f:
-                                    disk_name = f.read().strip()
-                        break
-        except Exception:
-            pass
-
         cpu_row, self.cpu_bar1, self.cpu_bar2 = create_stat_row("CPU", "13th Gen Intel(R) Core(TM) i9-13900H", "lbl_cpu_freq", "lbl_cpu_temp", True)
         gpu_row, self.gpu_bar1, self.gpu_bar2 = create_stat_row("GPU", "NVIDIA GeForce RTX 4060", "lbl_gpu_freq", "lbl_gpu_temp", True)
-        bat_row, self.bat_bar1, _ = create_stat_row("Battery", bat_name, "lbl_bat_pct", None, False)
-        disk_row, self.disk_bar1, _ = create_stat_row("Disk", disk_name, "lbl_disk_pct", None, False)
+        bat_row, self.bat_bar1, _ = create_stat_row("Battery", "[Battery Name]", "lbl_bat_pct", None, False)
+        disk_row, self.disk_bar1, _ = create_stat_row("Disk", "[Disk Name]", "lbl_disk_pct", None, False)
         
         self.bat_bar1.set_margin_end(20)
         self.disk_bar1.set_margin_end(150)
@@ -657,303 +634,9 @@ class MainWindow(Adw.ApplicationWindow):
         self.kb_smooth_scale.set_value(val)
         self.bz_smooth_scale.set_value(val)
 
+"""
+    
+    with open('/home/yamada/CODE/device_infinix_gtbook/GTControlCenter/controlcenter/window.py', 'w') as f:
+        f.write(new_ui + "\n" + logic_content)
 
-    def _update_color_button_ui(self, button, rgba):
-        css_provider = Gtk.CssProvider()
-        css = f"* {{ background-color: {rgba.to_string()}; background-image: none; border-radius: 6px; }}"
-        css_provider.load_from_data(css.encode())
-        context = button.get_style_context()
-        context.add_provider(css_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
-
-    def on_kb_zone_changed(self, dropdown, pspec):
-        zone = dropdown.get_selected()
-        zone_str = str(zone)
-        zones_config = self.config_mgr.config.get("keyboard_zones", {})
-        
-        if zone_str in zones_config:
-            kb = zones_config[zone_str]
-            self.kb_mode_dropdown.set_selected(kb.get("mode", 1))
-            self.kb_current_rgba.parse(kb.get("color", "#FF0000"))
-            self._update_color_button_ui(self.kb_color_button, self.kb_current_rgba)
-            self.kb_brightness_scale.set_value(kb.get("brightness", 100))
-            if hasattr(self, 'kb_device_dropdown') and hasattr(self, 'kb_audio_device_ids'):
-                device_idx = kb.get("audio_device", 0)
-                if device_idx < len(self.kb_audio_device_ids):
-                    self.kb_device_dropdown.set_selected(device_idx)
-            if hasattr(self, 'kb_sens_scale'):
-                self.kb_sens_scale.set_value(kb.get("sens", 35))
-            if hasattr(self, 'kb_smooth_scale'):
-                self.kb_smooth_scale.set_value(kb.get("smooth", 0))
-
-
-    def set_performance_mode(self, mode: int, save=True):
-        self.btn_office.remove_css_class("suggested-action")
-        self.btn_balance.remove_css_class("suggested-action")
-        self.btn_gaming.remove_css_class("suggested-action")
-        
-        if mode == 1:
-            self.btn_office.add_css_class("suggested-action")
-            target_fan_mode = FanCtrlMode.OfficeMode
-        elif mode == 2:
-            self.btn_balance.add_css_class("suggested-action")
-            target_fan_mode = FanCtrlMode.PerformanceMode
-        else:
-            self.btn_gaming.add_css_class("suggested-action")
-            target_fan_mode = FanCtrlMode.GamingMode
-            
-        self.fan.set_performance_mode(mode)
-        
-        if hasattr(self, 'max_fan_switch') and self.max_fan_switch.get_active():
-            self.fan.set_fan_mode(FanCtrlMode.FullSpeed)
-        else:
-            self.fan.set_fan_mode(target_fan_mode)
-            
-        if save:
-            self.config_mgr.config["performance"]["mode"] = mode
-            self.config_mgr.save()
-
-    def on_max_fan_toggled(self, switch, state):
-        if state:
-            self.fan.set_fan_mode(FanCtrlMode.FullSpeed)
-        else:
-            self.fan.set_fan_mode(FanCtrlMode.FullSpeedOff)
-            if self.btn_office.has_css_class("suggested-action"):
-                self.fan.set_fan_mode(FanCtrlMode.OfficeMode)
-            elif self.btn_balance.has_css_class("suggested-action"):
-                self.fan.set_fan_mode(FanCtrlMode.PerformanceMode)
-            elif self.btn_gaming.has_css_class("suggested-action"):
-                self.fan.set_fan_mode(FanCtrlMode.GamingMode)
-                
-        self.config_mgr.config["performance"]["max_fan"] = state
-        self.config_mgr.save()
-        return False
-
-    def apply_keyboard_lighting(self, btn):
-        color = self.kb_current_rgba
-        hex_color = f"#{int(color.red*255):02x}{int(color.green*255):02x}{int(color.blue*255):02x}"
-        
-        idx = self.kb_mode_dropdown.get_selected()
-        zone = self.kb_zone_dropdown.get_selected()
-        
-        brightness_pct = self.kb_brightness_scale.get_value()
-        brightness = int((brightness_pct / 100.0) * 255)
-        
-        sens = int(self.kb_sens_scale.get_value())
-        smooth = int(self.kb_smooth_scale.get_value())
-        
-        device_idx = self.kb_device_dropdown.get_selected()
-        audio_device = self.kb_audio_device_ids[device_idx] if hasattr(self, 'kb_audio_device_ids') and device_idx < len(self.kb_audio_device_ids) else None
-        
-        if zone == 0:
-            mode_map = {
-                0: KeyboardLightMode.LightOFF,
-                1: KeyboardLightMode.Always,
-                2: KeyboardLightMode.Breath,
-                3: KeyboardLightMode.GradualChange,
-                4: KeyboardLightMode.RainBow,
-                5: KeyboardLightMode.Flow,
-                6: KeyboardLightMode.Wave,
-                7: KeyboardLightMode.RhythmDance
-            }
-            mapped_mode = mode_map.get(idx, KeyboardLightMode.Always)
-            if idx == 0:
-                hex_color = "#000000"
-            self.lighting.set_keyboard_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth, audio_device=audio_device)
-            
-            # Sync the effect to all individual zones so they don't revert if a specific zone is later configured
-            if idx <= 4:
-                cmd_map = {1: 6, 2: 6, 3: 7, 4: 7}
-                offset_map = {1: 0, 2: 4, 3: 0, 4: 4}
-                zone_mode_map = {0: 0, 1: 0, 2: 1, 3: 2, 4: 3}
-                zone_mode = zone_mode_map.get(idx, 0)
-                sync_color = "#00FF00" if idx in (3, 4) else hex_color
-                for z in range(1, 5):
-                    self.lighting.set_zone_mode(cmd_map[z], offset_map[z] | zone_mode, sync_color, brightness=brightness)
-        elif 1 <= zone <= 4:
-            cmd_map = {1: 6, 2: 6, 3: 7, 4: 7}
-            offset_map = {1: 0, 2: 4, 3: 0, 4: 4}
-            cmd = cmd_map[zone]
-            offset = offset_map[zone]
-            
-            zone_mode_map = {
-                0: 0, # Off -> Always (black)
-                1: 0, # Static Color -> Always
-                2: 1, # Breathing -> Breath
-                3: 2, # Neon Cycle -> GradualChange
-                4: 3  # Rainbow -> RainBow
-            }
-            zone_mode = zone_mode_map.get(idx, 0)
-            
-            param = offset | zone_mode
-            if idx == 0:
-                hex_color = "#000000"
-            elif idx in (3, 4):
-                hex_color = "#00FF00"  # Hardware might require this specific color for animations
-            self.lighting.set_zone_mode(cmd, param, hex_color, brightness=brightness)
-            
-        if "keyboard_zones" not in self.config_mgr.config:
-            self.config_mgr.config["keyboard_zones"] = {}
-            
-        zone_str = str(zone)
-        zone_settings = {
-            "mode": idx,
-            "color": hex_color if idx != 0 else f"#{int(color.red*255):02x}{int(color.green*255):02x}{int(color.blue*255):02x}",
-            "brightness": brightness_pct,
-            "audio_device": device_idx,
-            "sens": sens,
-            "smooth": smooth
-        }
-        self.config_mgr.config["keyboard_zones"][zone_str] = zone_settings
-        
-        if zone == 0:
-            for z in range(1, 5):
-                self.config_mgr.config["keyboard_zones"][str(z)] = zone_settings.copy()
-
-        self.config_mgr.config["keyboard"].update(zone_settings)
-        self.config_mgr.config["keyboard"]["zone"] = zone
-        self.config_mgr.save()
-
-    def apply_back_zone_lighting(self, btn):
-        color = self.bz_current_rgba
-        hex_color = f"#{int(color.red*255):02x}{int(color.green*255):02x}{int(color.blue*255):02x}"
-        
-        idx = self.bz_mode_dropdown.get_selected()
-        
-        brightness_pct = self.bz_brightness_scale.get_value()
-        brightness = int((brightness_pct / 100.0) * 255)
-        
-        sens = int(self.bz_sens_scale.get_value())
-        smooth = int(self.bz_smooth_scale.get_value())
-        
-        device_idx = self.bz_device_dropdown.get_selected()
-        audio_device = self.bz_audio_device_ids[device_idx] if hasattr(self, 'bz_audio_device_ids') and device_idx < len(self.bz_audio_device_ids) else None
-        
-        mode_map_back = {
-            0: BackLightCmd.Light_Close,
-            1: BackLightCmd.Light_AlwaysOn,
-            2: BackLightCmd.Light_Breath,
-            3: BackLightCmd.Light_Rythm,
-            4: 99,
-            5: BackLightCmd.Light_Jump,
-            6: 98,
-            7: BackLightCmd.Light_Round,
-            8: BackLightCmd.Light_Cover
-        }
-        mapped_mode = mode_map_back.get(idx, BackLightCmd.Light_AlwaysOn)
-        if idx == 0:
-            hex_color = "#000000"
-        self.lighting.set_serial_back_zone_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth, audio_device=audio_device)
-
-        self.config_mgr.config["backzone"].update({
-            "mode": idx,
-            "color": hex_color if idx != 0 else f"#{int(color.red*255):02x}{int(color.green*255):02x}{int(color.blue*255):02x}",
-            "brightness": brightness_pct,
-            "audio_device": device_idx,
-            "sens": sens,
-            "smooth": smooth
-        })
-        self.config_mgr.save()
-
-    def update_monitors(self):
-        cpu_temp = self.monitor.get_cpu_temp()
-        gpu_temp = self.monitor.get_gpu_temp()
-        
-        try:
-            import psutil
-            cpu_freq = psutil.cpu_freq().current / 1000.0 if psutil.cpu_freq() else 2.6
-            bat = psutil.sensors_battery()
-            bat_pct = int(bat.percent) if bat else 100
-            disk = psutil.disk_usage('/')
-            disk_pct = int(disk.percent)
-        except Exception:
-            cpu_freq = 2.6
-            bat_pct = 100
-            disk_pct = 50
-            
-        gpu_freq = 3.0 if gpu_temp > 0 else 0.0
-        
-        self.lbl_cpu_temp.set_label(f"{cpu_temp} °C" if cpu_temp > 0 else "N/A")
-        self.lbl_gpu_temp.set_label(f"{gpu_temp} °C" if gpu_temp > 0 else "Sleep")
-        self.lbl_cpu_freq.set_label(f"{cpu_freq:.1f} GHz")
-        self.lbl_gpu_freq.set_label(f"{gpu_freq:.1f} GHz" if gpu_temp > 0 else "N/A")
-        
-        self.lbl_bat_pct.set_label(f"{bat_pct}%")
-        self.lbl_disk_pct.set_label(f"{disk_pct}%")
-        
-        # Approximate bar widths based on 400px max width
-        self.cpu_bar1.set_size_request(int(min(1.0, cpu_freq / 5.0) * 400), -1)
-        self.cpu_bar2.set_size_request(int(min(1.0, cpu_temp / 100.0) * 400), -1)
-        self.gpu_bar1.set_size_request(int(min(1.0, gpu_freq / 3.0) * 400), -1)
-        self.gpu_bar2.set_size_request(int(min(1.0, gpu_temp / 100.0) * 400), -1)
-        
-        self.bat_bar1.set_size_request(int((bat_pct / 100.0) * 400), -1)
-        self.disk_bar1.set_size_request(int((disk_pct / 100.0) * 400), -1)
-        
-        return True # Continue timer
-
-    def load_settings(self):
-        conf = self.config_mgr.config
-        
-        # Performance
-        perf = conf.get("performance", {})
-        self.max_fan_switch.set_active(perf.get("max_fan", False))
-
-        # Keyboard
-        kb = conf.get("keyboard", {})
-        if hasattr(self, 'kb_zone_dropdown'):
-            self.kb_zone_dropdown.set_selected(kb.get("zone", 0))
-            self.kb_mode_dropdown.set_selected(kb.get("mode", 1))
-            self.kb_current_rgba.parse(kb.get("color", "#FF0000"))
-            self._update_color_button_ui(self.kb_color_button, self.kb_current_rgba)
-            self.kb_brightness_scale.set_value(kb.get("brightness", 100))
-            if hasattr(self, 'kb_device_dropdown') and hasattr(self, 'kb_audio_device_ids'):
-                device_idx = kb.get("audio_device", 0)
-                if device_idx < len(self.kb_audio_device_ids):
-                    self.kb_device_dropdown.set_selected(device_idx)
-            if hasattr(self, 'kb_sens_scale'):
-                self.kb_sens_scale.set_value(kb.get("sens", 35))
-            if hasattr(self, 'kb_smooth_scale'):
-                self.kb_smooth_scale.set_value(kb.get("smooth", 0))
-
-        # Back Zone
-        bz = conf.get("backzone", {})
-        if hasattr(self, 'bz_mode_dropdown'):
-            self.bz_mode_dropdown.set_selected(bz.get("mode", 1))
-            self.bz_current_rgba.parse(bz.get("color", "#FF0000"))
-            self._update_color_button_ui(self.bz_color_button, self.bz_current_rgba)
-            self.bz_brightness_scale.set_value(bz.get("brightness", 100))
-            if hasattr(self, 'bz_device_dropdown') and hasattr(self, 'bz_audio_device_ids'):
-                device_idx = bz.get("audio_device", 0)
-                if device_idx < len(self.bz_audio_device_ids):
-                    self.bz_device_dropdown.set_selected(device_idx)
-            if hasattr(self, 'bz_sens_scale'):
-                self.bz_sens_scale.set_value(bz.get("sens", 35))
-            if hasattr(self, 'bz_smooth_scale'):
-                self.bz_smooth_scale.set_value(bz.get("smooth", 0))
-
-    def apply_all_settings(self):
-        conf = self.config_mgr.config
-        perf = conf.get("performance", {})
-        self.set_performance_mode(perf.get("mode", 2), save=False)
-        self.apply_keyboard_lighting(None)
-        self.apply_back_zone_lighting(None)
-
-    def on_reset_settings(self, btn):
-        dialog = Adw.MessageDialog(
-            transient_for=self,
-            heading="Reset Settings",
-            body="Are you sure you want to reset all settings to their default values? This cannot be undone."
-        )
-        dialog.add_response("cancel", "Cancel")
-        dialog.add_response("reset", "Reset")
-        dialog.set_response_appearance("reset", Adw.ResponseAppearance.DESTRUCTIVE)
-        
-        def on_response(dlg, response):
-            if response == "reset":
-                self.config_mgr.reset()
-                self.load_settings()
-                self.apply_all_settings()
-                
-        dialog.connect("response", on_response)
-        dialog.present()
-
+rewrite_window()
