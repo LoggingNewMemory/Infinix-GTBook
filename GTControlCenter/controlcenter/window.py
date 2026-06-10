@@ -925,19 +925,19 @@ class MainWindow(Adw.ApplicationWindow):
             bat_pct = 0
             disk_pct = 0
             
-        gpu_freq = self.monitor.get_gpu_freq()
+        gpu_usage = self.monitor.get_gpu_usage()
         
         self.lbl_cpu_temp.set_label(f"{cpu_temp} °C" if cpu_temp > 0 else "N/A")
         self.lbl_gpu_temp.set_label(f"{gpu_temp} °C" if gpu_temp > 0 else "Sleep")
-        self.lbl_cpu_freq.set_label(f"{cpu_freq:.1f} GHz")
-        self.lbl_gpu_freq.set_label(f"{gpu_freq:.1f} GHz" if gpu_temp > 0 else "N/A")
+        self.lbl_cpu_freq.set_label(f"{cpu_freq:.1f} GHz" if cpu_temp > 0 else "0.0 GHz")
+        self.lbl_gpu_freq.set_label(f"{gpu_usage}%" if gpu_temp > 0 else "0%")
         
         self.lbl_bat_pct.set_label(f"{bat_pct}%")
         self.lbl_disk_pct.set_label(f"{disk_pct}%")
         
         self.animate_bar(self.cpu_bar1, int(min(1.0, cpu_freq / 5.0) * 400))
         self.animate_bar(self.cpu_bar2, int(min(1.0, cpu_temp / 100.0) * 400))
-        self.animate_bar(self.gpu_bar1, int(min(1.0, gpu_freq / 3.0) * 400))
+        self.animate_bar(self.gpu_bar1, int((gpu_usage / 100.0) * 400))
         self.animate_bar(self.gpu_bar2, int(min(1.0, gpu_temp / 100.0) * 400))
         
         self.animate_bar(self.bat_bar1, int((bat_pct / 100.0) * 400))
