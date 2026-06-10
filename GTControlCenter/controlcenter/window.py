@@ -66,6 +66,9 @@ class MainWindow(Adw.ApplicationWindow):
     def setup_css(self):
         css_provider = Gtk.CssProvider()
         css = '''
+        window, window.background, window.csd, decoration {
+            border-radius: 0px;
+        }
         window {
             background-color: #272727;
             color: #ffffff;
@@ -76,6 +79,7 @@ class MainWindow(Adw.ApplicationWindow):
             background-image: none;
             border: none;
             box-shadow: none;
+            border-radius: 0px;
         }
         headerbar windowhandle {
             background-color: transparent;
