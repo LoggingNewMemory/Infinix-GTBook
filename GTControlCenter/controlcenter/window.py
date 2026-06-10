@@ -200,16 +200,17 @@ class MainWindow(Adw.ApplicationWindow):
     def setup_ui(self):
         self.header = Adw.HeaderBar()
         self.header.set_show_title(False)
+        self.header.set_show_start_title_buttons(False)
         
         title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         img_icon = Gtk.Image.new_from_file(os.path.join(self.assets_dir, "icon.png"))
-        img_icon.set_pixel_size(32)
+        img_icon.set_pixel_size(24)
         self.lbl_title = Gtk.Label(label="INFINIX - GT BOOK")
         self.lbl_title.add_css_class("header-title")
         title_box.append(img_icon)
         title_box.append(self.lbl_title)
         
-        self.header.set_title_widget(title_box)
+        self.header.pack_start(title_box)
         
         self.main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         self.main_box.append(self.header)
