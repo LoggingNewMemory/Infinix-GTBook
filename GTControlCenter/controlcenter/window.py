@@ -479,7 +479,8 @@ class MainWindow(Adw.ApplicationWindow):
         img_box = Gtk.Box()
         img_box.set_hexpand(True)
         img_box.set_valign(Gtk.Align.CENTER)
-        img = Gtk.Image.new_from_file(os.path.join(self.assets_dir, "keyboard_all.png"))
+        img = Gtk.Picture.new_for_filename(os.path.join(self.assets_dir, "keyboard_all.png"))
+        img.set_can_shrink(True)
         img_box.append(img)
         page.append(img_box)
         
@@ -567,7 +568,8 @@ class MainWindow(Adw.ApplicationWindow):
         page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=50)
         page.set_valign(Gtk.Align.CENTER)
         
-        img = Gtk.Image.new_from_file(os.path.join(self.assets_dir, "backzone.png"))
+        img = Gtk.Picture.new_for_filename(os.path.join(self.assets_dir, "backzone.png"))
+        img.set_can_shrink(True)
         img.set_halign(Gtk.Align.CENTER)
         page.append(img)
         
@@ -658,7 +660,8 @@ class MainWindow(Adw.ApplicationWindow):
         img_box = Gtk.Box()
         img_box.set_hexpand(True)
         img_box.set_valign(Gtk.Align.CENTER)
-        img = Gtk.Image.new_from_file(os.path.join(self.assets_dir, "GTBook.png"))
+        img = Gtk.Picture.new_for_filename(os.path.join(self.assets_dir, "GTBook.png"))
+        img.set_can_shrink(True)
         img_box.append(img)
         page.append(img_box)
         
