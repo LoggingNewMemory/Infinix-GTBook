@@ -23,7 +23,7 @@ class FanService:
     def set_performance_mode(self, mode: int) -> bool:
         """
         Set performance mode via EC RAM (WMI).
-        mode: 1 = Office, 2 = Balance, 3 = Gaming
+        mode: 0 = Office, 1 = Balance, 2 = Gaming
         """
         try:
             # Address 64 (0x40) is used for Performance mode

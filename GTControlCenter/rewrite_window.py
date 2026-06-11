@@ -345,15 +345,15 @@ class MainWindow(Adw.ApplicationWindow):
         
         self.btn_office = Gtk.Button(label="Office")
         self.btn_office.add_css_class("mode-btn")
-        self.btn_office.connect("clicked", lambda x: self.set_performance_mode(1))
+        self.btn_office.connect("clicked", lambda x: self.set_performance_mode(0))
         
         self.btn_balance = Gtk.Button(label="Balanced")
         self.btn_balance.add_css_class("mode-btn")
-        self.btn_balance.connect("clicked", lambda x: self.set_performance_mode(2))
+        self.btn_balance.connect("clicked", lambda x: self.set_performance_mode(1))
         
         self.btn_gaming = Gtk.Button(label="Gaming")
         self.btn_gaming.add_css_class("mode-btn")
-        self.btn_gaming.connect("clicked", lambda x: self.set_performance_mode(3))
+        self.btn_gaming.connect("clicked", lambda x: self.set_performance_mode(2))
         
         right_box.append(self.btn_office)
         right_box.append(self.btn_balance)

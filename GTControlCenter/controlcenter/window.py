@@ -430,15 +430,15 @@ class MainWindow(Adw.ApplicationWindow):
         
         self.btn_office = Gtk.Button(label="Office")
         self.btn_office.add_css_class("mode-btn")
-        self.btn_office.connect("clicked", lambda x: self.set_performance_mode(1))
+        self.btn_office.connect("clicked", lambda x: self.set_performance_mode(0))
         
         self.btn_balance = Gtk.Button(label="Balanced")
         self.btn_balance.add_css_class("mode-btn")
-        self.btn_balance.connect("clicked", lambda x: self.set_performance_mode(2))
+        self.btn_balance.connect("clicked", lambda x: self.set_performance_mode(1))
         
         self.btn_gaming = Gtk.Button(label="Gaming")
         self.btn_gaming.add_css_class("mode-btn")
-        self.btn_gaming.connect("clicked", lambda x: self.set_performance_mode(3))
+        self.btn_gaming.connect("clicked", lambda x: self.set_performance_mode(2))
         
         right_box.append(self.btn_office)
         right_box.append(self.btn_balance)
@@ -785,10 +785,10 @@ class MainWindow(Adw.ApplicationWindow):
         self.btn_balance.remove_css_class("active")
         self.btn_gaming.remove_css_class("active")
         
-        if mode == 1:
+        if mode == 0:
             self.btn_office.add_css_class("active")
             target_fan_mode = FanCtrlMode.OfficeMode
-        elif mode == 2:
+        elif mode == 1:
             self.btn_balance.add_css_class("active")
             target_fan_mode = FanCtrlMode.PerformanceMode
         else:
@@ -1050,7 +1050,7 @@ class MainWindow(Adw.ApplicationWindow):
     def apply_all_settings(self):
         conf = self.config_mgr.config
         perf = conf.get("performance", {})
-        self.set_performance_mode(perf.get("mode", 2), save=False)
+        self.set_performance_mode(perf.get("mode", 1), save=False)
         self.apply_keyboard_lighting(None)
         self.apply_back_zone_lighting(None)
 
