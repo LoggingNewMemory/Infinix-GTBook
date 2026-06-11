@@ -459,8 +459,67 @@ class MainWindow(Adw.ApplicationWindow):
         fan_box.append(self.max_fan_switch)
         right_box.append(fan_box)
         
+        gpu_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        gpu_box.set_margin_top(40)
+        lbl_gpu = Gtk.Label(label="GPU Profile")
+        lbl_gpu.add_css_class("control-label")
+        lbl_gpu.set_hexpand(True)
+        lbl_gpu.set_halign(Gtk.Align.START)
+        
+        self.gpu_mode_dropdown = Gtk.DropDown.new_from_strings(["dGPU Only", "Dynamic", "iGPU Only"])
+        self.gpu_mode_dropdown.add_css_class("custom-dropdown")
+        self.gpu_mode_dropdown.set_valign(Gtk.Align.CENTER)
+        
+        try:
+            current_gpu_mode = self.wmi.get_gpu_mode()
+            if current_gpu_mode in (1, 2, 3):
+                self.gpu_mode_dropdown.set_selected(current_gpu_mode - 1)
+        except Exception:
+            pass
+
+        self.gpu_mode_dropdown.connect("notify::selected", self.on_gpu_mode_changed)
+        gpu_box.append(lbl_gpu)
+        gpu_box.append(self.gpu_mode_dropdown)
+        right_box.append(gpu_box)
+        
         page.append(right_box)
         self.stack.add_named(page, "overview")
+
+    def on_gpu_mode_changed(self, dropdown, pspec):
+        if getattr(self, '_ignore_gpu_change', False):
+            return
+
+        idx = dropdown.get_selected()
+        mode = idx + 1
+        
+        try:
+            current_mode = self.wmi.get_gpu_mode()
+            if current_mode == mode:
+                return
+        except Exception:
+            current_mode = 2
+            
+        dialog = Adw.MessageDialog(
+            transient_for=self,
+            heading="Reboot Required",
+            body="Changing the GPU profile requires a system reboot. Do you want to reboot now?"
+        )
+        dialog.add_response("cancel", "Cancel")
+        dialog.add_response("reboot", "Reboot")
+        dialog.set_response_appearance("reboot", Adw.ResponseAppearance.DESTRUCTIVE)
+        
+        def on_response(dlg, response):
+            if response == "reboot":
+                self.wmi.set_gpu_mode(mode)
+                os.system("systemctl reboot")
+            else:
+                self._ignore_gpu_change = True
+                if current_mode in (1, 2, 3):
+                    self.gpu_mode_dropdown.set_selected(current_mode - 1)
+                self._ignore_gpu_change = False
+
+        dialog.connect("response", on_response)
+        dialog.present()
 
     def _create_control_row(self, label_text, widget):
         row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=30)

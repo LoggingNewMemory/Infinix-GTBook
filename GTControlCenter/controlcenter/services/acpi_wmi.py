@@ -122,3 +122,21 @@ class ACPIWmi:
     def ec_read_ram_cmd(self, address: int) -> int:
         return self.smi(128, 0, 1) # Needs proper mapping
 
+    def set_gpu_mode(self, mode: int) -> int:
+        """
+        Switches the GPU mode: 1 = dGPU Only, 2 = Dynamic, 3 = iGPU Only
+        """
+        self.mem_io(768, 1, 144, 0)
+        self.mem_io(768, 1, 145, 192)
+        self.mem_io(768, 1, 146, 1)
+        self.mem_io(768, 1, 160, mode)
+        self.mem_io(768, 1, 147, 161)
+        return self.mem_io(768, 0, 148, 0)
+
+    def get_gpu_mode(self) -> int:
+        self.mem_io(768, 1, 144, 0)
+        self.mem_io(768, 1, 145, 192)
+        self.mem_io(768, 1, 146, 1)
+        self.mem_io(768, 1, 147, 160)
+        return self.mem_io(768, 0, 160, 0)
+
