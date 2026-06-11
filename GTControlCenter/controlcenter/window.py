@@ -738,13 +738,19 @@ class MainWindow(Adw.ApplicationWindow):
     def setup_misc_page(self):
         page = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
         
-        img_box = Gtk.Box()
+        img_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
         img_box.set_hexpand(True)
         img_box.set_valign(Gtk.Align.CENTER)
         img_box.set_halign(Gtk.Align.CENTER)
         img = Gtk.Picture.new_for_filename(os.path.join(self.assets_dir, "GTBook.png"))
         img.set_can_shrink(True)
         img_box.append(img)
+        
+        lbl_credit = Gtk.Label(label="GT Control Center - By: Kanagawa Yamada")
+        lbl_credit.add_css_class("stat-sub")
+        lbl_credit.set_margin_top(20)
+        img_box.append(lbl_credit)
+        
         page.append(img_box)
         
         sep = Gtk.Box()
