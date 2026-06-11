@@ -813,10 +813,14 @@ class MainWindow(Adw.ApplicationWindow):
             os.makedirs(autostart_dir)
             
         if state:
-            exec_path = os.path.abspath(sys.executable)
+            if getattr(sys, 'frozen', False):
+                exec_cmd = os.path.abspath(sys.executable)
+            else:
+                exec_cmd = f"{os.path.abspath(sys.executable)} {os.path.abspath(sys.argv[0])}"
+            
             desktop_content = f"""[Desktop Entry]
 Type=Application
-Exec={exec_path} --background
+Exec={exec_cmd} --background
 Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true

@@ -17,10 +17,13 @@ if '--tray-process' in sys.argv:
         icon_path = os.path.join(base_dir, 'assets', 'icon.png')
         
     image = Image.open(icon_path)
-    exec_path = sys.executable
+    if getattr(sys, 'frozen', False):
+        exec_cmd = [sys.executable]
+    else:
+        exec_cmd = [sys.executable, os.path.abspath(__file__)]
     
     def show_window(icon, item):
-        subprocess.Popen([exec_path])
+        subprocess.Popen(exec_cmd)
         
     def quit_app(icon, item):
         # Kill the parent GTK process

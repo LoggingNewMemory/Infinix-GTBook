@@ -27,8 +27,12 @@ class ControlCenterApp(Adw.Application):
 
     def setup_tray(self):
         try:
-            # Launch the separate tray process using the absolute path to the executable
-            self.tray_proc = subprocess.Popen([sys.executable, '--tray-process'])
+            import os
+            if getattr(sys, 'frozen', False):
+                cmd = [sys.executable, '--tray-process']
+            else:
+                cmd = [sys.executable, os.path.abspath(sys.argv[0]), '--tray-process']
+            self.tray_proc = subprocess.Popen(cmd)
         except Exception as e:
             print("Failed to start tray process:", e)
 
