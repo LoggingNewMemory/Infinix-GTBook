@@ -797,10 +797,7 @@ class MainWindow(Adw.ApplicationWindow):
             
         self.fan.set_performance_mode(mode)
         
-        if hasattr(self, 'max_fan_switch') and self.max_fan_switch.get_active():
-            self.fan.set_fan_mode(FanCtrlMode.FullSpeed)
-        else:
-            self.fan.set_fan_mode(target_fan_mode)
+        self.fan.set_fan_mode(target_fan_mode)
             
         if save:
             self.config_mgr.config["performance"]["mode"] = mode
