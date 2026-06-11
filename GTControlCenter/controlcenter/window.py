@@ -439,7 +439,14 @@ class MainWindow(Adw.ApplicationWindow):
         right_box.set_valign(Gtk.Align.START)
         right_box.set_hexpand(True)
         right_box.set_size_request(300, -1)
-        right_box.set_margin_top(40)
+        right_box.set_margin_top(0)
+        
+        self.mode_img = Gtk.Picture.new_for_filename(os.path.join(self.assets_dir, "office.png"))
+        self.mode_img.set_can_shrink(True)
+        self.mode_img.set_size_request(200, 200)
+        self.mode_img.set_margin_bottom(20)
+        self.mode_img.set_halign(Gtk.Align.CENTER)
+        right_box.append(self.mode_img)
         
         self.btn_office = Gtk.Button(label="Office")
         self.btn_office.add_css_class("mode-btn")
@@ -908,12 +915,18 @@ Comment=Run GT Control Center in background
         if mode == 0:
             self.btn_office.add_css_class("active")
             target_fan_mode = FanCtrlMode.OfficeMode
+            if hasattr(self, 'mode_img'):
+                self.mode_img.set_filename(os.path.join(self.assets_dir, "office.png"))
         elif mode == 1:
             self.btn_balance.add_css_class("active")
             target_fan_mode = FanCtrlMode.PerformanceMode
+            if hasattr(self, 'mode_img'):
+                self.mode_img.set_filename(os.path.join(self.assets_dir, "balanced.png"))
         else:
             self.btn_gaming.add_css_class("active")
             target_fan_mode = FanCtrlMode.GamingMode
+            if hasattr(self, 'mode_img'):
+                self.mode_img.set_filename(os.path.join(self.assets_dir, "gaming.png"))
             
         self.fan.set_performance_mode(mode)
         
