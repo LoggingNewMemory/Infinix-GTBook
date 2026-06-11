@@ -5,13 +5,17 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw, Gio
 
+import subprocess
+
 from controlcenter.window import MainWindow
 
 
 class ControlCenterApp(Adw.Application):
-    def __init__(self):
+    def __init__(self, is_background=False):
         super().__init__(application_id='com.byd.controlcenter',
                          flags=Gio.ApplicationFlags.FLAGS_NONE)
+        self.is_background = is_background
+        self.first_activate = True
                          
         # Suppress Adwaita warning if user's environment has prefer-dark-theme set globally
         settings = Gtk.Settings.get_default()
@@ -19,19 +23,41 @@ class ControlCenterApp(Adw.Application):
             settings.set_property("gtk-application-prefer-dark-theme", False)
             
         self.win = None
+        self.tray_proc = None
+
+    def setup_tray(self):
+        try:
+            # Launch the separate tray process using the absolute path to the executable
+            self.tray_proc = subprocess.Popen([sys.executable, '--tray-process'])
+        except Exception as e:
+            print("Failed to start tray process:", e)
 
     def do_startup(self):
         Adw.Application.do_startup(self)
         Adw.StyleManager.get_default().set_color_scheme(Adw.ColorScheme.PREFER_DARK)
+        
+        # Keep application running in background
+        self.hold()
+        self.setup_tray()
 
     def do_activate(self):
         if not self.win:
             self.win = MainWindow(self)
-        self.win.present()
+            
+        if self.is_background and self.first_activate:
+            self.first_activate = False
+        else:
+            self.win.present()
+            self.first_activate = False
 
 def main():
-    app = ControlCenterApp()
+    is_bg = '--background' in sys.argv
+    if is_bg:
+        sys.argv.remove('--background')
+        
+    app = ControlCenterApp(is_background=is_bg)
     return app.run(sys.argv)
 
 if __name__ == '__main__':
     sys.exit(main())
+

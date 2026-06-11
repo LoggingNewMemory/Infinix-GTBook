@@ -60,9 +60,15 @@ class MainWindow(Adw.ApplicationWindow):
         self.load_settings()
         self.apply_all_settings()
         
+        self.connect('close-request', self.on_close_request)
+        
         # Populate data immediately before window is shown
         self.update_monitors()
         GLib.timeout_add(2000, self.update_monitors)
+
+    def on_close_request(self, *args):
+        self.set_visible(False)
+        return True
 
     def setup_css(self):
         css_provider = Gtk.CssProvider()
@@ -762,6 +768,13 @@ class MainWindow(Adw.ApplicationWindow):
         self.global_smooth_scale.connect("value-changed", self.on_global_smooth_changed)
         ctrl_box.append(self._create_control_row("Smoothness", self.global_smooth_scale))
         
+        self.autostart_switch = Gtk.Switch()
+        self.autostart_switch.set_valign(Gtk.Align.CENTER)
+        self.autostart_switch.set_halign(Gtk.Align.END)
+        self.autostart_switch.connect("state-set", self.on_autostart_toggled)
+        self.autostart_switch.set_active(self.is_autostart_enabled())
+        ctrl_box.append(self._create_control_row("Run on Startup", self.autostart_switch))
+        
         reset_btn = Gtk.Button(label="Reset Configurations")
         reset_btn.add_css_class("action-btn")
         reset_btn.set_margin_top(20)
@@ -770,6 +783,37 @@ class MainWindow(Adw.ApplicationWindow):
         
         page.append(ctrl_box)
         self.stack.add_named(page, "misc")
+
+    def get_autostart_path(self):
+        return os.path.expanduser("~/.config/autostart/gt-controlcenter.desktop")
+
+    def is_autostart_enabled(self):
+        return os.path.exists(self.get_autostart_path())
+
+    def on_autostart_toggled(self, switch, state):
+        autostart_path = self.get_autostart_path()
+        autostart_dir = os.path.dirname(autostart_path)
+        if not os.path.exists(autostart_dir):
+            os.makedirs(autostart_dir)
+            
+        if state:
+            exec_path = os.path.abspath(sys.executable)
+            desktop_content = f"""[Desktop Entry]
+Type=Application
+Exec={exec_path} --background
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name=GT Control Center
+Comment=Run GT Control Center in background
+"""
+            with open(autostart_path, "w") as f:
+                f.write(desktop_content)
+        else:
+            if os.path.exists(autostart_path):
+                os.remove(autostart_path)
+                
+        return False
 
     def on_global_audio_changed(self, dropdown, pspec):
         val = dropdown.get_selected()
