@@ -5,6 +5,7 @@ from gi.repository import Gtk, Adw, GLib, Gdk, Pango
 
 import os
 import sys
+import threading
 
 from controlcenter.models.tx_buf import KeyboardLightMode, KeyboardLight12Mode, BackLightCmd, FanCtrlMode
 from controlcenter.services.acpi_wmi import ACPIWmi
@@ -296,6 +297,7 @@ class MainWindow(Adw.ApplicationWindow):
             lbl_title.set_halign(Gtk.Align.START)
             title_box.append(lbl_title)
             
+            lbl_sub = None
             if sub:
                 lbl_sub = Gtk.Label(label=sub)
                 lbl_sub.add_css_class("stat-sub")
@@ -342,77 +344,85 @@ class MainWindow(Adw.ApplicationWindow):
             val_box.set_size_request(80, -1)
             row.append(val_box)
             
-            return row, bar1, bar2
+            return row, bar1, bar2, lbl_sub
             
-        # Dynamically get battery name
-        bat_name = "Internal Battery"
-        try:
-            import os
-            for bat in os.listdir("/sys/class/power_supply"):
-                if bat.startswith("BAT"):
-                    try:
-                        with open(f"/sys/class/power_supply/{bat}/model_name", "r") as f:
-                            bat_name = f.read().strip()
-                        with open(f"/sys/class/power_supply/{bat}/manufacturer", "r") as f:
-                            bat_man = f.read().strip()
-                        if bat_man:
-                            bat_name = f"{bat_man} {bat_name}"
-                    except Exception:
-                        pass
-                    break
-        except Exception:
-            pass
+        cpu_row, self.cpu_bar1, self.cpu_bar2, self.lbl_cpu_name = create_stat_row("CPU", "Loading...", "lbl_cpu_freq", "lbl_cpu_temp", True)
+        gpu_row, self.gpu_bar1, self.gpu_bar2, self.lbl_gpu_name = create_stat_row("GPU", "Loading...", "lbl_gpu_freq", "lbl_gpu_temp", True)
+        bat_row, self.bat_bar1, _, self.lbl_bat_name = create_stat_row("Battery", "Loading...", "lbl_bat_pct", None, False)
+        disk_row, self.disk_bar1, _, self.lbl_disk_name = create_stat_row("Disk", "Loading...", "lbl_disk_pct", None, False)
 
-        # Dynamically get disk name
-        disk_name = "Primary SSD"
-        try:
-            import os, re
-            with open("/proc/mounts", "r") as f:
-                for line in f:
-                    if " / " in line:
-                        dev = line.split(" ")[0]
-                        if dev.startswith("/dev/"):
-                            dev_name = os.path.basename(dev)
-                            if dev_name.startswith("nvme"):
-                                dev_name = re.sub(r"p\d+$", "", dev_name)
-                            else:
-                                dev_name = re.sub(r"\d+$", "", dev_name)
-                            if os.path.exists(f"/sys/block/{dev_name}/device/model"):
-                                with open(f"/sys/block/{dev_name}/device/model", "r") as f:
-                                    disk_name = f.read().strip()
+        def fetch_hw_names():
+            bat_name = "Internal Battery"
+            try:
+                import os
+                for bat in os.listdir("/sys/class/power_supply"):
+                    if bat.startswith("BAT"):
+                        try:
+                            with open(f"/sys/class/power_supply/{bat}/model_name", "r") as f:
+                                bat_name = f.read().strip()
+                            with open(f"/sys/class/power_supply/{bat}/manufacturer", "r") as f:
+                                bat_man = f.read().strip()
+                            if bat_man:
+                                bat_name = f"{bat_man} {bat_name}"
+                        except Exception:
+                            pass
                         break
-        except Exception:
-            pass
+            except Exception:
+                pass
 
-        # Dynamically get CPU name
-        cpu_name = "Unknown CPU"
-        try:
-            with open("/proc/cpuinfo", "r") as f:
-                for line in f:
-                    if line.startswith("model name"):
-                        cpu_name = line.split(":", 1)[1].strip()
-                        break
-        except Exception:
-            pass
+            disk_name = "Primary SSD"
+            try:
+                import os, re
+                with open("/proc/mounts", "r") as f:
+                    for line in f:
+                        if " / " in line:
+                            dev = line.split(" ")[0]
+                            if dev.startswith("/dev/"):
+                                dev_name = os.path.basename(dev)
+                                if dev_name.startswith("nvme"):
+                                    dev_name = re.sub(r"p\d+$", "", dev_name)
+                                else:
+                                    dev_name = re.sub(r"\d+$", "", dev_name)
+                                if os.path.exists(f"/sys/block/{dev_name}/device/model"):
+                                    with open(f"/sys/block/{dev_name}/device/model", "r") as f:
+                                        disk_name = f.read().strip()
+                            break
+            except Exception:
+                pass
+
+            cpu_name = "Unknown CPU"
+            try:
+                with open("/proc/cpuinfo", "r") as f:
+                    for line in f:
+                        if line.startswith("model name"):
+                            cpu_name = line.split(":", 1)[1].strip()
+                            break
+            except Exception:
+                pass
+                
+            gpu_name = "Unknown GPU"
+            try:
+                import pynvml
+                pynvml.nvmlInit()
+                h = pynvml.nvmlDeviceGetHandleByIndex(0)
+                name_val = pynvml.nvmlDeviceGetName(h)
+                if isinstance(name_val, bytes):
+                    gpu_name = name_val.decode('utf-8')
+                else:
+                    gpu_name = name_val
+            except Exception:
+                pass
+
+            def update_ui():
+                if self.lbl_cpu_name: self.lbl_cpu_name.set_label(cpu_name)
+                if self.lbl_gpu_name: self.lbl_gpu_name.set_label(gpu_name)
+                if self.lbl_bat_name: self.lbl_bat_name.set_label(bat_name)
+                if self.lbl_disk_name: self.lbl_disk_name.set_label(disk_name)
+                return False
             
-        # Dynamically get GPU name
-        gpu_name = "Unknown GPU"
-        try:
-            import pynvml
-            pynvml.nvmlInit()
-            h = pynvml.nvmlDeviceGetHandleByIndex(0)
-            name_val = pynvml.nvmlDeviceGetName(h)
-            if isinstance(name_val, bytes):
-                gpu_name = name_val.decode('utf-8')
-            else:
-                gpu_name = name_val
-        except Exception:
-            pass
+            GLib.idle_add(update_ui)
 
-        cpu_row, self.cpu_bar1, self.cpu_bar2 = create_stat_row("CPU", cpu_name, "lbl_cpu_freq", "lbl_cpu_temp", True)
-        gpu_row, self.gpu_bar1, self.gpu_bar2 = create_stat_row("GPU", gpu_name, "lbl_gpu_freq", "lbl_gpu_temp", True)
-        bat_row, self.bat_bar1, _ = create_stat_row("Battery", bat_name, "lbl_bat_pct", None, False)
-        disk_row, self.disk_bar1, _ = create_stat_row("Disk", disk_name, "lbl_disk_pct", None, False)
+        threading.Thread(target=fetch_hw_names, daemon=True).start()
         
         left_box.append(cpu_row)
         left_box.append(gpu_row)
@@ -1052,39 +1062,45 @@ Comment=Run GT Control Center in background
         self.config_mgr.save()
 
     def update_monitors(self):
-        cpu_temp = self.monitor.get_cpu_temp()
-        gpu_temp = self.monitor.get_gpu_temp()
-        
-        try:
-            import psutil
-            cpu_freq = psutil.cpu_freq().current / 1000.0 if psutil.cpu_freq() else 2.6
-            bat = psutil.sensors_battery()
-            bat_pct = int(bat.percent) if bat else 100
-            disk = psutil.disk_usage('/')
-            disk_pct = int(disk.percent)
-        except Exception:
-            cpu_freq = 0.0
-            bat_pct = 0
-            disk_pct = 0
+        def fetch_data():
+            cpu_temp = self.monitor.get_cpu_temp()
+            gpu_temp = self.monitor.get_gpu_temp()
             
-        gpu_usage = self.monitor.get_gpu_usage()
-        
-        self.lbl_cpu_temp.set_label(f"{cpu_temp} °C" if cpu_temp > 0 else "N/A")
-        self.lbl_gpu_temp.set_label(f"{gpu_temp} °C" if gpu_temp > 0 else "Sleep")
-        self.lbl_cpu_freq.set_label(f"{cpu_freq:.1f} GHz" if cpu_temp > 0 else "0.0 GHz")
-        self.lbl_gpu_freq.set_label(f"{gpu_usage}%" if gpu_temp > 0 else "0%")
-        
-        self.lbl_bat_pct.set_label(f"{bat_pct}%")
-        self.lbl_disk_pct.set_label(f"{disk_pct}%")
-        
-        self.animate_bar(self.cpu_bar1, int(min(1.0, cpu_freq / 5.0) * 400))
-        self.animate_bar(self.cpu_bar2, int(min(1.0, cpu_temp / 100.0) * 400))
-        self.animate_bar(self.gpu_bar1, int((gpu_usage / 100.0) * 400))
-        self.animate_bar(self.gpu_bar2, int(min(1.0, gpu_temp / 100.0) * 400))
-        
-        self.animate_bar(self.bat_bar1, int((bat_pct / 100.0) * 400))
-        self.animate_bar(self.disk_bar1, int((disk_pct / 100.0) * 400))
-        
+            try:
+                import psutil
+                cpu_freq = psutil.cpu_freq().current / 1000.0 if psutil.cpu_freq() else 2.6
+                bat = psutil.sensors_battery()
+                bat_pct = int(bat.percent) if bat else 100
+                disk = psutil.disk_usage('/')
+                disk_pct = int(disk.percent)
+            except Exception:
+                cpu_freq = 0.0
+                bat_pct = 0
+                disk_pct = 0
+                
+            gpu_usage = self.monitor.get_gpu_usage()
+            
+            def update_ui():
+                self.lbl_cpu_temp.set_label(f"{cpu_temp} °C" if cpu_temp > 0 else "N/A")
+                self.lbl_gpu_temp.set_label(f"{gpu_temp} °C" if gpu_temp > 0 else "Sleep")
+                self.lbl_cpu_freq.set_label(f"{cpu_freq:.1f} GHz" if cpu_temp > 0 else "0.0 GHz")
+                self.lbl_gpu_freq.set_label(f"{gpu_usage}%" if gpu_temp > 0 else "0%")
+                
+                self.lbl_bat_pct.set_label(f"{bat_pct}%")
+                self.lbl_disk_pct.set_label(f"{disk_pct}%")
+                
+                self.animate_bar(self.cpu_bar1, int(min(1.0, cpu_freq / 5.0) * 400))
+                self.animate_bar(self.cpu_bar2, int(min(1.0, cpu_temp / 100.0) * 400))
+                self.animate_bar(self.gpu_bar1, int((gpu_usage / 100.0) * 400))
+                self.animate_bar(self.gpu_bar2, int(min(1.0, gpu_temp / 100.0) * 400))
+                
+                self.animate_bar(self.bat_bar1, int((bat_pct / 100.0) * 400))
+                self.animate_bar(self.disk_bar1, int((disk_pct / 100.0) * 400))
+                return False
+
+            GLib.idle_add(update_ui)
+
+        threading.Thread(target=fetch_data, daemon=True).start()
         return True # Continue timer
 
     def animate_bar(self, bar, new_width):
