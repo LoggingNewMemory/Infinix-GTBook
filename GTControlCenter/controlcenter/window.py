@@ -277,7 +277,7 @@ class MainWindow(Adw.ApplicationWindow):
         page = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         
         left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=30)
-        left_box.set_size_request(600, -1)
+        left_box.set_size_request(720, -1)
         left_box.set_hexpand(False)
         left_box.set_valign(Gtk.Align.CENTER)
         
@@ -302,6 +302,7 @@ class MainWindow(Adw.ApplicationWindow):
             bar_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
             bar_box.set_hexpand(True)
             bar_box.set_valign(Gtk.Align.CENTER)
+            bar_box.set_size_request(400, -1)
             
             bar1 = Gtk.Box()
             bar1.add_css_class("bar-cyan")
@@ -312,7 +313,6 @@ class MainWindow(Adw.ApplicationWindow):
                 bar2 = Gtk.Box()
                 bar2.add_css_class("bar-green")
                 bar2.set_halign(Gtk.Align.START)
-                bar2.set_margin_end(60) # Simulate shorter green bar
                 bar_box.append(bar2)
             else:
                 bar2 = None
@@ -407,9 +407,6 @@ class MainWindow(Adw.ApplicationWindow):
         gpu_row, self.gpu_bar1, self.gpu_bar2 = create_stat_row("GPU", gpu_name, "lbl_gpu_freq", "lbl_gpu_temp", True)
         bat_row, self.bat_bar1, _ = create_stat_row("Battery", bat_name, "lbl_bat_pct", None, False)
         disk_row, self.disk_bar1, _ = create_stat_row("Disk", disk_name, "lbl_disk_pct", None, False)
-        
-        self.bat_bar1.set_margin_end(20)
-        self.disk_bar1.set_margin_end(150)
         
         left_box.append(cpu_row)
         left_box.append(gpu_row)
