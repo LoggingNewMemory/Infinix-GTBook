@@ -100,14 +100,26 @@ class LightingService:
             # The original app divides by N
             fft_mag = np.abs(fft_result) / len(mono_data)
             
+            # Calculate 4 frequency bands for the awesome visualizer (Jump mode)
+            band_vols = [
+                np.sum(fft_mag[1:6]),    # Bass
+                np.sum(fft_mag[6:16]),   # Low-Mid
+                np.sum(fft_mag[16:41]),  # High-Mid
+                np.sum(fft_mag[41:151])  # Treble
+            ]
+            for i in range(4):
+                band_sum_recorder[i] += band_vols[i]
+                
             current_vol = np.sum(fft_mag)
             sum_recorder += current_vol
             
-            # Use sensitivity slider to scale (in original app it's 1.0 by default, here we scale around it)
+            # Use sensitivity slider to scale
             sens_val = max(0.0, min(100.0, sens)) / 35.0
             
             if t100ms_recorder == 4:
-                # ORIGINAL APP LOGIC: Sum_RecorderDAT *= 30.0
+                # ---------------------------------------------------------
+                # 1. ORIGINAL LOGIC (For Back Zone Rhythm & Keyboard Light)
+                # ---------------------------------------------------------
                 val = sum_recorder * 30.0 * sens_val
                 
                 # Apply smoothness slider as EMA
@@ -116,6 +128,18 @@ class LightingService:
                 
                 new_max_0 = min(255.0, val)
                 max_vol_0 = (max_vol_0 * decay) + (new_max_0 * (1.0 - decay))
+                
+                # ---------------------------------------------------------
+                # 2. 4-BAND VISUALIZER LOGIC (For Back Zone Jump mode)
+                # ---------------------------------------------------------
+                # We use square root compression and small multipliers for the bands.
+                band_multipliers = [50.0, 75.0, 100.0, 150.0]
+                for i in range(4):
+                    compressed_vol = band_sum_recorder[i] ** 0.5
+                    band_val = compressed_vol * band_multipliers[i] * sens_val
+                    new_max_band = min(255.0, band_val)
+                    max_vol_bands[i] = (max_vol_bands[i] * decay) + (new_max_band * (1.0 - decay))
+                    band_sum_recorder[i] = 0.0
                 
                 sum_recorder = 0.0
                 t100ms_recorder = 0
@@ -134,11 +158,20 @@ class LightingService:
                 else:
                     bz_r, bz_g, bz_b = bz["r"], bz["g"], bz["b"]
                 
-                # ORIGINAL APP LOGIC: MaxVolumn[0] and MaxVolumn[3] are set, 1 and 2 are 0.
-                bz_fd1 = int(max_vol_0)
-                bz_fd2 = 0
-                bz_fd3 = 0
-                bz_fd4 = int(max_vol_0)
+                # ---------------------------------------------------------
+                # ASSIGNMENTS
+                # ---------------------------------------------------------
+                if bz_mode == 5 or bz_mode == 98: # Jump mode (and Rainbow Jump)
+                    bz_fd1 = int(max_vol_bands[0])
+                    bz_fd2 = int(max_vol_bands[1])
+                    bz_fd3 = int(max_vol_bands[2])
+                    bz_fd4 = int(max_vol_bands[3])
+                else:
+                    # ORIGINAL APP LOGIC (For Rhythm mode)
+                    bz_fd1 = int(max_vol_0)
+                    bz_fd2 = 0
+                    bz_fd3 = 0
+                    bz_fd4 = int(max_vol_0)
                     
                 packet = get_back_zone_packet(bz_mode, bz_r, bz_g, bz_b, bz["brightness"], speed=1, fd1=bz_fd1, fd2=bz_fd2, fd3=bz_fd3, fd4=bz_fd4)
                 self.serial.send_data(packet)
@@ -150,9 +183,9 @@ class LightingService:
                 else:
                     kb_r, kb_g, kb_b = kb["r"], kb["g"], kb["b"]
                 
-                # The Back Zone hardware treats values ~80 as fully bright, but the Keyboard needs ~255.
-                # We apply a 2.5x multiplier exclusively here so the Keyboard hits 100% brightness without affecting the Back Zone.
-                vol_ratio = min(1.0, (max_vol_0 / 255.0) * 2.5)
+                # Use the heavily compressed visualizer bands and apply a massive 3x digital gain!
+                # This ensures even 30% volume peaks out at 100% brightness.
+                vol_ratio = min(1.0, (max(max_vol_bands) / 255.0) * 3.0)
                 mod_r = int(kb_r * vol_ratio)
                 mod_g = int(kb_g * vol_ratio)
                 mod_b = int(kb_b * vol_ratio)
