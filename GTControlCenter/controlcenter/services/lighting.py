@@ -71,14 +71,16 @@ class LightingService:
             return
 
         sum_recorder = 0.0
+        band_sum_recorder = [0.0, 0.0, 0.0, 0.0]
         t100ms_recorder = 0
         max_vol_0 = 0.0
-        max_vol_3 = 0.0
+        max_vol_bands = [0.0, 0.0, 0.0, 0.0]
         
         rainbow_hue = 0.0
 
         def audio_callback(indata, frames, time_info, status):
-            nonlocal sum_recorder, t100ms_recorder, max_vol_0, max_vol_3
+            nonlocal sum_recorder, t100ms_recorder, max_vol_0
+            nonlocal band_sum_recorder, max_vol_bands
             nonlocal rainbow_hue
             if stop_event.is_set():
                 raise sd.CallbackStop
@@ -98,25 +100,39 @@ class LightingService:
             # The original app divides by N
             fft_mag = np.abs(fft_result) / len(mono_data)
             
-            # Apply basic smoothing on the spectrum (simulating Visualizer.MakeSmooth and dynamics)
-            # The original app takes the sum of the smoothed spectrum
-            current_vol = np.sum(fft_mag)
-            
-            # Use sensitivity slider to scale the original 30.0 multiplier
-            sens_val = max(0.0, min(100.0, sens)) / 35.0 # 35 is default sens
-            
-            sum_recorder += current_vol
-            if t100ms_recorder == 4:
-                val = sum_recorder * 30.0 * sens_val
+            # Calculate 4 frequency bands for the Back Zone visualizer
+            band_vols = [
+                np.sum(fft_mag[1:6]),    # Bass (approx 40-200 Hz)
+                np.sum(fft_mag[6:16]),   # Low-Mid (approx 200-600 Hz)
+                np.sum(fft_mag[16:41]),  # High-Mid (approx 600-1700 Hz)
+                np.sum(fft_mag[41:151])  # Treble (approx 1700-6000 Hz)
+            ]
+            for i in range(4):
+                band_sum_recorder[i] += band_vols[i]
                 
+            # Use the sum of the valid bands for the overall Rhythm volume, avoiding DC offset
+            current_vol = sum(band_vols)
+            sum_recorder += current_vol
+            
+            # Use sensitivity slider to scale
+            sens_val = max(0.0, min(100.0, sens)) / 35.0
+            
+            if t100ms_recorder == 4:
                 # Apply smoothness slider as EMA
                 smooth_val = max(0.0, min(100.0, smooth)) / 100.0
                 decay = smooth_val * 0.9
                 
-                new_max_0 = min(255.0, val)
+                # Different multipliers per band to normalize energy (reduced to prevent constant full brightness)
+                band_multipliers = [200.0, 300.0, 400.0, 600.0]
+                for i in range(4):
+                    # Apply multiplier to frequency band
+                    band_val = band_sum_recorder[i] * band_multipliers[i] * sens_val
+                    new_max_band = min(255.0, band_val)
+                    max_vol_bands[i] = (max_vol_bands[i] * decay) + (new_max_band * (1.0 - decay))
+                    band_sum_recorder[i] = 0.0
                 
-                max_vol_0 = (max_vol_0 * decay) + (new_max_0 * (1.0 - decay))
-                max_vol_3 = max_vol_0 # It uses the same value
+                # Since the Jump bands are scaling perfectly, derive the overall Rhythm volume from them
+                max_vol_0 = max(max_vol_bands)
                 
                 sum_recorder = 0.0
                 t100ms_recorder = 0
@@ -135,17 +151,17 @@ class LightingService:
                 else:
                     bz_r, bz_g, bz_b = bz["r"], bz["g"], bz["b"]
                 
-                bz_fd1 = int(max_vol_0)
-                bz_fd2 = 0
-                bz_fd3 = 0
-                bz_fd4 = int(max_vol_3)
+                bz_fd1 = int(max_vol_bands[0])
+                bz_fd2 = int(max_vol_bands[1])
+                bz_fd3 = int(max_vol_bands[2])
+                bz_fd4 = int(max_vol_bands[3])
                 
                 if bz_mode == 3: # BackLightCmd.Light_Rythm
                     # The original app passes MaxVolumn to the hardware for Rythm as well
                     bz_fd1 = int(max_vol_0)
                     bz_fd2 = 0
                     bz_fd3 = 0
-                    bz_fd4 = int(max_vol_3)
+                    bz_fd4 = int(max_vol_0)
                     
                 packet = get_back_zone_packet(bz_mode, bz_r, bz_g, bz_b, bz["brightness"], speed=1, fd1=bz_fd1, fd2=bz_fd2, fd3=bz_fd3, fd4=bz_fd4)
                 self.serial.send_data(packet)
@@ -157,7 +173,8 @@ class LightingService:
                 else:
                     kb_r, kb_g, kb_b = kb["r"], kb["g"], kb["b"]
                 
-                vol_ratio = max_vol_0 / 255.0
+                # Increase overall keyboard brightness scale by 20% (multiplier 1.2) so it's not too dim, but remains off when quiet
+                vol_ratio = min(1.0, (max_vol_0 / 255.0) * 1.2)
                 mod_r = int(kb_r * vol_ratio)
                 mod_g = int(kb_g * vol_ratio)
                 mod_b = int(kb_b * vol_ratio)

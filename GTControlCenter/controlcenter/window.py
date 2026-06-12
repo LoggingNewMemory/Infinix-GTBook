@@ -648,7 +648,7 @@ class MainWindow(Adw.ApplicationWindow):
             
         self.kb_device_dropdown = Gtk.DropDown.new_from_strings(self.kb_audio_names)
         self.kb_sens_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
-        self.kb_sens_scale.set_value(35)
+        self.kb_sens_scale.set_value(75)
         self.kb_smooth_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
         self.kb_smooth_scale.set_value(0)
         
@@ -738,7 +738,7 @@ class MainWindow(Adw.ApplicationWindow):
             
         self.bz_device_dropdown = Gtk.DropDown.new_from_strings(self.bz_audio_names)
         self.bz_sens_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
-        self.bz_sens_scale.set_value(35)
+        self.bz_sens_scale.set_value(75)
         self.bz_smooth_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
         self.bz_smooth_scale.set_value(0)
         
@@ -788,7 +788,7 @@ class MainWindow(Adw.ApplicationWindow):
         ctrl_box.append(self.audio_dropdown)
         
         self.global_sens_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
-        self.global_sens_scale.set_value(35)
+        self.global_sens_scale.set_value(75)
         self.global_sens_scale.add_css_class("custom-scale")
         self.global_sens_scale.connect("value-changed", self.on_global_sens_changed)
         ctrl_box.append(self._create_control_row("Sensitivity", self.global_sens_scale))
@@ -928,7 +928,7 @@ Comment=Run GT Control Center in background
                 if device_idx < len(self.kb_audio_device_ids):
                     self.kb_device_dropdown.set_selected(device_idx)
             if hasattr(self, 'kb_sens_scale'):
-                self.kb_sens_scale.set_value(kb.get("sens", 35))
+                self.kb_sens_scale.set_value(kb.get("sens", 75))
             if hasattr(self, 'kb_smooth_scale'):
                 self.kb_smooth_scale.set_value(kb.get("smooth", 0))
 
@@ -1189,7 +1189,7 @@ Comment=Run GT Control Center in background
                 if device_idx < len(self.kb_audio_device_ids):
                     self.kb_device_dropdown.set_selected(device_idx)
             if hasattr(self, 'kb_sens_scale'):
-                self.kb_sens_scale.set_value(kb.get("sens", 35))
+                self.kb_sens_scale.set_value(kb.get("sens", 75))
             if hasattr(self, 'kb_smooth_scale'):
                 self.kb_smooth_scale.set_value(kb.get("smooth", 0))
 
@@ -1205,7 +1205,7 @@ Comment=Run GT Control Center in background
                 if device_idx < len(self.bz_audio_device_ids):
                     self.bz_device_dropdown.set_selected(device_idx)
             if hasattr(self, 'bz_sens_scale'):
-                self.bz_sens_scale.set_value(bz.get("sens", 35))
+                self.bz_sens_scale.set_value(bz.get("sens", 75))
             if hasattr(self, 'bz_smooth_scale'):
                 self.bz_smooth_scale.set_value(bz.get("smooth", 0))
 
