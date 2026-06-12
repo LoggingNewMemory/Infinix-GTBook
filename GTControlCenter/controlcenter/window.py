@@ -622,7 +622,7 @@ class MainWindow(Adw.ApplicationWindow):
         ctrl_box.append(self._create_control_row("Color", self.kb_color_button))
         
         self.kb_mode_dropdown = Gtk.DropDown.new_from_strings([
-            "Off", "Static Color", "Breathing", "Neon Cycle", "Ocean Waves", "Rainbow", "Flow", "Wave", "Rhythm Dance"
+            "Off", "Static Color", "Breathing", "Neon Cycle", "Ocean Waves", "Rainbow", "Flow", "Wave", "Rhythm Normal", "Rhythm Dance"
         ])
         self.kb_mode_dropdown.set_size_request(260, -1)
         self.kb_mode_dropdown.add_css_class("custom-dropdown")
@@ -895,9 +895,9 @@ Comment=Run GT Control Center in background
         zone = dropdown.get_selected()
         
         if zone == 0:
-            self.kb_mode_dropdown.set_model(Gtk.StringList.new([
-                "Off", "Static Color", "Breathing", "Neon Cycle", "Ocean Waves", "Rainbow", "Flow", "Wave", "Rhythm Dance"
-            ]))
+            self._update_dropdown_items(self.kb_mode_dropdown, [
+                "Off", "Static Color", "Breathing", "Neon Cycle", "Ocean Waves", "Rainbow", "Flow", "Wave", "Rhythm Normal", "Rhythm Dance"
+            ])
         else:
             self.kb_mode_dropdown.set_model(Gtk.StringList.new([
                 "Off", "Static Color", "Breathing", "Neon Cycle", "Rainbow"
@@ -1004,7 +1004,8 @@ Comment=Run GT Control Center in background
                 5: KeyboardLightMode.RainBow,
                 6: KeyboardLightMode.Flow,
                 7: KeyboardLightMode.Wave,
-                8: KeyboardLightMode.RhythmDance
+                8: KeyboardLightMode.RhythmNormal,
+                9: KeyboardLightMode.RhythmDance
             }
             mapped_mode = mode_map.get(idx, KeyboardLightMode.Always)
             if idx == 0:

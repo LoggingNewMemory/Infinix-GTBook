@@ -221,10 +221,11 @@ class LightingService:
         """
         r, g, b = self._hex_to_rgb(color_hex)
         
-        if mode == KeyboardLightMode.RhythmDance:
+        if mode in (KeyboardLightMode.RhythmDance, KeyboardLightMode.RhythmNormal):
+            is_rainbow = (mode == KeyboardLightMode.RhythmDance)
             self.kb_anim = {
                 "mode": mode.value, "r": r, "g": g, "b": b,
-                "brightness": brightness, "is_rainbow": True,
+                "brightness": brightness, "is_rainbow": is_rainbow,
                 "sens": sens, "smooth": smooth
             }
             if audio_device is not None:

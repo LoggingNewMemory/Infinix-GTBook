@@ -22,6 +22,7 @@ class KeyboardLightMode(enum.IntEnum):
     Light_Auto_Close = 7
     Light_Open = 8
     RhythmDance = 9
+    RhythmNormal = 10
 
 class KeyboardLight12Mode(enum.IntEnum):
     Always1 = 0
