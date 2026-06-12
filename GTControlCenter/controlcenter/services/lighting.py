@@ -70,21 +70,16 @@ class LightingService:
         except ImportError:
             return
 
-        current_b1 = 0.0
-        current_b2 = 0.0
-        current_b3 = 0.0
-        current_b4 = 0.0
-
-        peak_b1 = 0.002
-        peak_b2 = 0.002
-        peak_b3 = 0.002
-        peak_b4 = 0.002
+        sum_recorder = 0.0
+        t100ms_recorder = 0
+        max_vol_0 = 0.0
+        max_vol_3 = 0.0
         
         rainbow_hue = 0.0
 
         def audio_callback(indata, frames, time_info, status):
-            nonlocal current_b1, current_b2, current_b3, current_b4
-            nonlocal peak_b1, peak_b2, peak_b3, peak_b4, rainbow_hue
+            nonlocal sum_recorder, t100ms_recorder, max_vol_0, max_vol_3
+            nonlocal rainbow_hue
             if stop_event.is_set():
                 raise sd.CallbackStop
                 
@@ -99,34 +94,34 @@ class LightingService:
             window = np.hanning(len(mono_data))
             windowed = mono_data * window
             fft_result = np.fft.rfft(windowed)
-            fft_mag = np.abs(fft_result) * 2.0 / len(mono_data)
             
-            b1_raw = np.mean(fft_mag[1:6])
-            b2_raw = np.mean(fft_mag[6:23])
-            b3_raw = np.mean(fft_mag[23:93])
-            b4_raw = np.mean(fft_mag[93:372])
+            # The original app divides by N
+            fft_mag = np.abs(fft_result) / len(mono_data)
             
-            peak_b1 = max(peak_b1 * 0.99, b1_raw, 0.002)
-            peak_b2 = max(peak_b2 * 0.99, b2_raw, 0.002)
-            peak_b3 = max(peak_b3 * 0.99, b3_raw, 0.002)
-            peak_b4 = max(peak_b4 * 0.99, b4_raw, 0.002)
+            # Apply basic smoothing on the spectrum (simulating Visualizer.MakeSmooth and dynamics)
+            # The original app takes the sum of the smoothed spectrum
+            current_vol = np.sum(fft_mag)
             
-            smooth_val = max(0.0, min(100.0, smooth)) / 100.0
-            attack = 1.0 - (smooth_val * 0.9)
-            decay = 0.5 - (smooth_val * 0.45)
+            # Use sensitivity slider to scale the original 30.0 multiplier
+            sens_val = max(0.0, min(100.0, sens)) / 35.0 # 35 is default sens
             
-            sens_val = max(0.0, min(100.0, sens)) / 50.0
-            gain = sens_val ** 2.0
-            
-            v1 = min(255.0, (((b1_raw / peak_b1) ** 1.5) * 255.0 * gain))
-            v2 = min(255.0, (((b2_raw / peak_b2) ** 1.5) * 255.0 * gain))
-            v3 = min(255.0, (((b3_raw / peak_b3) ** 1.5) * 255.0 * gain))
-            v4 = min(255.0, (((b4_raw / peak_b4) ** 1.5) * 255.0 * gain))
-            
-            current_b1 += (attack if v1 > current_b1 else decay) * (v1 - current_b1)
-            current_b2 += (attack if v2 > current_b2 else decay) * (v2 - current_b2)
-            current_b3 += (attack if v3 > current_b3 else decay) * (v3 - current_b3)
-            current_b4 += (attack if v4 > current_b4 else decay) * (v4 - current_b4)
+            sum_recorder += current_vol
+            if t100ms_recorder == 4:
+                val = sum_recorder * 30.0 * sens_val
+                
+                # Apply smoothness slider as EMA
+                smooth_val = max(0.0, min(100.0, smooth)) / 100.0
+                decay = smooth_val * 0.9
+                
+                new_max_0 = min(255.0, val)
+                
+                max_vol_0 = (max_vol_0 * decay) + (new_max_0 * (1.0 - decay))
+                max_vol_3 = max_vol_0 # It uses the same value
+                
+                sum_recorder = 0.0
+                t100ms_recorder = 0
+            else:
+                t100ms_recorder += 1
             
             if (self.bz_anim and self.bz_anim["is_rainbow"]) or (self.kb_anim and self.kb_anim["is_rainbow"]):
                 rainbow_hue = (rainbow_hue + 0.005) % 1.0
@@ -140,17 +135,17 @@ class LightingService:
                 else:
                     bz_r, bz_g, bz_b = bz["r"], bz["g"], bz["b"]
                 
-                overall_vol = max(current_b1, current_b2, current_b3, current_b4)
-                bz_fd1 = int(overall_vol)
-                bz_fd2 = int(overall_vol)
-                bz_fd3 = int(overall_vol)
-                bz_fd4 = int(overall_vol)
+                bz_fd1 = int(max_vol_0)
+                bz_fd2 = 0
+                bz_fd3 = 0
+                bz_fd4 = int(max_vol_3)
                 
-                if bz_mode == 4: # BackLightCmd.Light_Jump
-                    bz_fd1 = int(overall_vol)
+                if bz_mode == 3: # BackLightCmd.Light_Rythm
+                    # The original app passes MaxVolumn to the hardware for Rythm as well
+                    bz_fd1 = int(max_vol_0)
                     bz_fd2 = 0
                     bz_fd3 = 0
-                    bz_fd4 = int(overall_vol)
+                    bz_fd4 = int(max_vol_3)
                     
                 packet = get_back_zone_packet(bz_mode, bz_r, bz_g, bz_b, bz["brightness"], speed=1, fd1=bz_fd1, fd2=bz_fd2, fd3=bz_fd3, fd4=bz_fd4)
                 self.serial.send_data(packet)
@@ -162,8 +157,7 @@ class LightingService:
                 else:
                     kb_r, kb_g, kb_b = kb["r"], kb["g"], kb["b"]
                 
-                overall_vol = max(current_b1, current_b2, current_b3, current_b4)
-                vol_ratio = overall_vol / 255.0
+                vol_ratio = max_vol_0 / 255.0
                 mod_r = int(kb_r * vol_ratio)
                 mod_g = int(kb_g * vol_ratio)
                 mod_b = int(kb_b * vol_ratio)

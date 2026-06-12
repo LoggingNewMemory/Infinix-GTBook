@@ -859,11 +859,29 @@ Comment=Run GT Control Center in background
         val = scale.get_value()
         self.kb_sens_scale.set_value(val)
         self.bz_sens_scale.set_value(val)
+        if self.lighting.kb_anim:
+            self.lighting.kb_anim["sens"] = val
+        if self.lighting.bz_anim:
+            self.lighting.bz_anim["sens"] = val
+        if "keyboard" in self.config_mgr.config:
+            self.config_mgr.config["keyboard"]["sens"] = val
+        if "backzone" in self.config_mgr.config:
+            self.config_mgr.config["backzone"]["sens"] = val
+        self.config_mgr.save()
 
     def on_global_smooth_changed(self, scale):
         val = scale.get_value()
         self.kb_smooth_scale.set_value(val)
         self.bz_smooth_scale.set_value(val)
+        if self.lighting.kb_anim:
+            self.lighting.kb_anim["smooth"] = val
+        if self.lighting.bz_anim:
+            self.lighting.bz_anim["smooth"] = val
+        if "keyboard" in self.config_mgr.config:
+            self.config_mgr.config["keyboard"]["smooth"] = val
+        if "backzone" in self.config_mgr.config:
+            self.config_mgr.config["backzone"]["smooth"] = val
+        self.config_mgr.save()
 
 
     def _update_color_button_ui(self, button, rgba):
