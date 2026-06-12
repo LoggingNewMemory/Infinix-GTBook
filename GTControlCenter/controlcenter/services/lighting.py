@@ -183,9 +183,15 @@ class LightingService:
                 else:
                     kb_r, kb_g, kb_b = kb["r"], kb["g"], kb["b"]
                 
-                # Use the heavily compressed visualizer bands and apply a massive 3x digital gain!
-                # This ensures even 30% volume peaks out at 100% brightness.
-                vol_ratio = min(1.0, (max(max_vol_bands) / 255.0) * 3.0)
+                # True Audio Monitor mapping (Using the 4-band visualizer data)
+                kb_max_band = max(max_vol_bands)
+                
+                # To ensure it easily hits 100% MAX brightness, we discard the power curve.
+                # Instead, we use a sharp linear map:
+                # 1. Ignore everything below 15.0 (crush laptop fan noise instantly to 0%)
+                # 2. Map the remaining volume so that just 40.0 more hits 100% brightness.
+                active_kb_vol = max(0.0, kb_max_band - 15.0)
+                vol_ratio = min(1.0, active_kb_vol / 40.0)
                 mod_r = int(kb_r * vol_ratio)
                 mod_g = int(kb_g * vol_ratio)
                 mod_b = int(kb_b * vol_ratio)
