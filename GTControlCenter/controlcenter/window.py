@@ -491,7 +491,9 @@ class MainWindow(Adw.ApplicationWindow):
         self.gpu_mode_dropdown.set_valign(Gtk.Align.CENTER)
         
         try:
-            current_gpu_mode = self.wmi.get_gpu_mode()
+            current_gpu_mode = self.config_mgr.config.get("performance", {}).get("gpu_mode")
+            if not current_gpu_mode:
+                current_gpu_mode = self.wmi.get_gpu_mode()
             if current_gpu_mode in (1, 2, 3):
                 self.gpu_mode_dropdown.set_selected(current_gpu_mode - 1)
         except Exception:
@@ -513,7 +515,9 @@ class MainWindow(Adw.ApplicationWindow):
         mode = idx + 1
         
         try:
-            current_mode = self.wmi.get_gpu_mode()
+            current_mode = self.config_mgr.config.get("performance", {}).get("gpu_mode")
+            if not current_mode:
+                current_mode = self.wmi.get_gpu_mode()
             if current_mode == mode:
                 return
         except Exception:
@@ -530,6 +534,10 @@ class MainWindow(Adw.ApplicationWindow):
         
         def on_response(dlg, response):
             if response == "reboot":
+                if "performance" not in self.config_mgr.config:
+                    self.config_mgr.config["performance"] = {}
+                self.config_mgr.config["performance"]["gpu_mode"] = mode
+                self.config_mgr.save()
                 self.wmi.set_gpu_mode(mode)
                 os.system("systemctl reboot")
             else:

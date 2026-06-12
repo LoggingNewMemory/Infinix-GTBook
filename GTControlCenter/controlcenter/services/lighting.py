@@ -140,17 +140,17 @@ class LightingService:
                 else:
                     bz_r, bz_g, bz_b = bz["r"], bz["g"], bz["b"]
                 
-                bz_fd1 = int(current_b1)
-                bz_fd2 = int(current_b2)
-                bz_fd3 = int(current_b3)
-                bz_fd4 = int(current_b4)
+                overall_vol = max(current_b1, current_b2, current_b3, current_b4)
+                bz_fd1 = int(overall_vol)
+                bz_fd2 = int(overall_vol)
+                bz_fd3 = int(overall_vol)
+                bz_fd4 = int(overall_vol)
                 
                 if bz_mode == 4: # BackLightCmd.Light_Jump
-                    overall_vol = int((current_b1 + current_b2 + current_b3 + current_b4) / 4)
-                    bz_fd1 = overall_vol
+                    bz_fd1 = int(overall_vol)
                     bz_fd2 = 0
                     bz_fd3 = 0
-                    bz_fd4 = overall_vol
+                    bz_fd4 = int(overall_vol)
                     
                 packet = get_back_zone_packet(bz_mode, bz_r, bz_g, bz_b, bz["brightness"], speed=1, fd1=bz_fd1, fd2=bz_fd2, fd3=bz_fd3, fd4=bz_fd4)
                 self.serial.send_data(packet)
