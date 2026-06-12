@@ -122,11 +122,13 @@ class LightingService:
                 smooth_val = max(0.0, min(100.0, smooth)) / 100.0
                 decay = smooth_val * 0.9
                 
-                # Different multipliers per band to normalize energy (reduced to prevent constant full brightness)
-                band_multipliers = [200.0, 300.0, 400.0, 600.0]
+                # Apply square root compression to tame loud peaks and boost quiet details.
+                # This ensures the visualizer dynamically bounces instead of getting stuck at 100%.
+                band_multipliers = [150.0, 200.0, 250.0, 350.0]
                 for i in range(4):
-                    # Apply multiplier to frequency band
-                    band_val = band_sum_recorder[i] * band_multipliers[i] * sens_val
+                    # Square root compression
+                    compressed_vol = band_sum_recorder[i] ** 0.5
+                    band_val = compressed_vol * band_multipliers[i] * sens_val
                     new_max_band = min(255.0, band_val)
                     max_vol_bands[i] = (max_vol_bands[i] * decay) + (new_max_band * (1.0 - decay))
                     band_sum_recorder[i] = 0.0

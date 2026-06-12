@@ -1189,9 +1189,15 @@ Comment=Run GT Control Center in background
                 if device_idx < len(self.kb_audio_device_ids):
                     self.kb_device_dropdown.set_selected(device_idx)
             if hasattr(self, 'kb_sens_scale'):
-                self.kb_sens_scale.set_value(kb.get("sens", 75))
+                sens_val = kb.get("sens", 75)
+                self.kb_sens_scale.set_value(sens_val)
+                if hasattr(self, 'global_sens_scale'):
+                    self.global_sens_scale.set_value(sens_val)
             if hasattr(self, 'kb_smooth_scale'):
-                self.kb_smooth_scale.set_value(kb.get("smooth", 0))
+                smooth_val = kb.get("smooth", 0)
+                self.kb_smooth_scale.set_value(smooth_val)
+                if hasattr(self, 'global_smooth_scale'):
+                    self.global_smooth_scale.set_value(smooth_val)
 
         # Back Zone
         bz = conf.get("backzone", {})
