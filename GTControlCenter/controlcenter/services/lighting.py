@@ -150,8 +150,9 @@ class LightingService:
                 else:
                     kb_r, kb_g, kb_b = kb["r"], kb["g"], kb["b"]
                 
-                # Restore keyboard vol_ratio to original calculation
-                vol_ratio = max_vol_0 / 255.0
+                # The Back Zone hardware treats values ~80 as fully bright, but the Keyboard needs ~255.
+                # We apply a 2.5x multiplier exclusively here so the Keyboard hits 100% brightness without affecting the Back Zone.
+                vol_ratio = min(1.0, (max_vol_0 / 255.0) * 2.5)
                 mod_r = int(kb_r * vol_ratio)
                 mod_g = int(kb_g * vol_ratio)
                 mod_b = int(kb_b * vol_ratio)
