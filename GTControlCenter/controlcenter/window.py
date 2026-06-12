@@ -816,7 +816,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.stack.add_named(page, "misc")
 
     def get_autostart_path(self):
-        return os.path.expanduser("~/.config/autostart/gt-controlcenter.desktop")
+        return os.path.expanduser("~/.config/autostart/com.byd.controlcenter.desktop")
 
     def is_autostart_enabled(self):
         return os.path.exists(self.get_autostart_path())

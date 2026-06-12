@@ -22,7 +22,7 @@ EOF
 chmod +x /usr/bin/gt-controlcenter
 
 echo "Creating Desktop Entry..."
-cat << 'EOF' > /usr/share/applications/gt-controlcenter.desktop
+cat << 'EOF' > /usr/share/applications/com.byd.controlcenter.desktop
 [Desktop Entry]
 Name=GT Control Center
 Comment=Control Center for Infinix GT Book
@@ -31,6 +31,7 @@ Icon=/opt/gt-controlcenter/assets/icon.png
 Terminal=false
 Type=Application
 Categories=Settings;HardwareSettings;
+StartupWMClass=com.byd.controlcenter
 EOF
 
 echo "Copying udev rules..."

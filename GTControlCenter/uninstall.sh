@@ -10,7 +10,7 @@ rm -rf /opt/gt-controlcenter
 
 echo "Removing launcher and desktop entry..."
 rm -f /usr/bin/gt-controlcenter
-rm -f /usr/share/applications/gt-controlcenter.desktop
+rm -f /usr/share/applications/com.byd.controlcenter.desktop
 
 echo "Disabling and removing acpi_call service..."
 systemctl disable --now acpi-call-perms.service 2>/dev/null || true
