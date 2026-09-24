@@ -6,6 +6,7 @@ from gi.repository import Gtk, Adw, GLib, Gdk, Pango
 import os
 import sys
 import threading
+import concurrent.futures
 
 from controlcenter.models.tx_buf import KeyboardLightMode, KeyboardLight12Mode, BackLightCmd, FanCtrlMode
 from controlcenter.services.acpi_wmi import ACPIWmi
@@ -31,6 +32,7 @@ class MainWindow(Adw.ApplicationWindow):
         super().__init__(application=app, title="INFINIX - GT BOOK")
         self.set_default_size(1280, 720)
         self.set_resizable(False)
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         
         if hasattr(sys, '_MEIPASS'):
             self.assets_dir = os.path.join(sys._MEIPASS, 'assets')
@@ -366,6 +368,7 @@ class MainWindow(Adw.ApplicationWindow):
         gpu_row, self.gpu_bar1, self.gpu_bar2, self.lbl_gpu_name = create_stat_row("GPU", "Loading...", "lbl_gpu_freq", "lbl_gpu_temp", True)
         bat_row, self.bat_bar1, _, self.lbl_bat_name = create_stat_row("Battery", "Loading...", "lbl_bat_pct", None, False)
         disk_row, self.disk_bar1, _, self.lbl_disk_name = create_stat_row("Disk", "Loading...", "lbl_disk_pct", None, False)
+        fan_row, self.fan_bar1, self.fan_bar2, _ = create_stat_row("Fan Speed", "CPU / GPU", "lbl_cpu_fan", "lbl_gpu_fan", True)
 
         def fetch_hw_names():
             bat_name = "Internal Battery"
@@ -444,6 +447,7 @@ class MainWindow(Adw.ApplicationWindow):
         left_box.append(gpu_row)
         left_box.append(bat_row)
         left_box.append(disk_row)
+        left_box.append(fan_row)
         
         page.append(left_box)
         
@@ -1126,21 +1130,11 @@ Comment=Run GT Control Center in background
             
             perf_mode = self.config_mgr.config.get("performance", {}).get("mode", 1)
             if perf_mode == 0:
-                target_fan_mode = FanCtrlMode.OfficeMode
                 bz_cmd = BackLightCmd.SliceMode
             elif perf_mode == 1:
-                target_fan_mode = FanCtrlMode.PerformanceMode
                 bz_cmd = BackLightCmd.BalanceMode
             else:
-                target_fan_mode = FanCtrlMode.GamingMode
                 bz_cmd = BackLightCmd.GameMode
-            self.fan.set_fan_mode(target_fan_mode)
-            
-            if hasattr(self, 'max_fan_switch') and self.max_fan_switch.get_active():
-                self.fan.set_fan_full_mode(True)
-                self.fan.set_fan_mode(FanCtrlMode.FullSpeed)
-            else:
-                self.fan.set_fan_full_mode(False)
                 
             self.lighting.set_serial_back_zone_mode(bz_cmd, "#000000", brightness=100)
             hex_color = "#000000"
@@ -1189,6 +1183,8 @@ Comment=Run GT Control Center in background
                 disk_pct = 0
                 
             gpu_usage = self.monitor.get_gpu_usage()
+            cpu_fan = self.monitor.get_cpu_fan()
+            gpu_fan = self.monitor.get_gpu_fan()
             
             def update_ui():
                 self.lbl_cpu_temp.set_label(f"{cpu_temp} °C" if cpu_temp > 0 else "N/A")
@@ -1199,6 +1195,9 @@ Comment=Run GT Control Center in background
                 self.lbl_bat_pct.set_label(f"{bat_pct}%")
                 self.lbl_disk_pct.set_label(f"{disk_pct}%")
                 
+                self.lbl_cpu_fan.set_label(f"{cpu_fan} RPM")
+                self.lbl_gpu_fan.set_label(f"{gpu_fan} RPM")
+                
                 self.animate_bar(self.cpu_bar1, int(min(1.0, cpu_freq / 5.0) * 400))
                 self.animate_bar(self.cpu_bar2, int(min(1.0, cpu_temp / 100.0) * 400))
                 self.animate_bar(self.gpu_bar1, int((gpu_usage / 100.0) * 400))
@@ -1206,11 +1205,15 @@ Comment=Run GT Control Center in background
                 
                 self.animate_bar(self.bat_bar1, int((bat_pct / 100.0) * 400))
                 self.animate_bar(self.disk_bar1, int((disk_pct / 100.0) * 400))
+                
+                self.animate_bar(self.fan_bar1, int(min(1.0, cpu_fan / 6000.0) * 400))
+                self.animate_bar(self.fan_bar2, int(min(1.0, gpu_fan / 6000.0) * 400))
                 return False
 
             GLib.idle_add(update_ui)
 
-        threading.Thread(target=fetch_data, daemon=True).start()
+        if hasattr(self, 'executor'):
+            self.executor.submit(fetch_data)
         return True # Continue timer
 
     def animate_bar(self, bar, new_width):

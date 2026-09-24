@@ -90,6 +90,18 @@ class MonitorService:
                 pass
         return 0.0
 
+    def get_cpu_fan(self) -> int:
+        try:
+            return self.wmi.ec_read_ram_cmd(8) * 100
+        except Exception:
+            return 0
+            
+    def get_gpu_fan(self) -> int:
+        try:
+            return self.wmi.ec_read_ram_cmd(9) * 100
+        except Exception:
+            return 0
+
     def __del__(self):
         if self._nvml_initialized:
             try:

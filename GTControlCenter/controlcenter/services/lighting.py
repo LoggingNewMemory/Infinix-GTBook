@@ -25,19 +25,27 @@ class LightingService:
 
     def update_animations(self):
         needs_thread = self.kb_anim is not None or self.bz_anim is not None
+        
+        old_thread = self._anim_thread
+        self._stop_event.set()
+        self._anim_thread = None
+        
         if needs_thread:
-            self.stop_animation()
-            self._stop_event.clear()
-            self._anim_thread = threading.Thread(target=self._anim_loop, args=(self._stop_event,), daemon=True)
+            new_stop_event = threading.Event()
+            self._stop_event = new_stop_event
+            
+            def starter():
+                if old_thread:
+                    old_thread.join(timeout=1.0)
+                if not new_stop_event.is_set():
+                    self._anim_loop(new_stop_event)
+                    
+            self._anim_thread = threading.Thread(target=starter, daemon=True)
             self._anim_thread.start()
-        else:
-            self.stop_animation()
 
     def stop_animation(self):
         self._stop_event.set()
-        if self._anim_thread:
-            self._anim_thread.join(timeout=1.0)
-            self._anim_thread = None
+        self._anim_thread = None
 
     def _anim_loop(self, stop_event):
         from controlcenter.models.tx_buf import get_back_zone_packet
