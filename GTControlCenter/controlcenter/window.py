@@ -32,7 +32,8 @@ class MainWindow(Adw.ApplicationWindow):
         super().__init__(application=app, title="INFINIX - GT BOOK")
         self.set_default_size(1280, 720)
         self.set_resizable(False)
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        self.ui_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        self.monitor_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         
         if hasattr(sys, '_MEIPASS'):
             self.assets_dir = os.path.join(sys._MEIPASS, 'assets')
@@ -981,36 +982,46 @@ Comment=Run GT Control Center in background
             if hasattr(self, 'mode_img'):
                 self.mode_img.set_filename(os.path.join(self.assets_dir, "gaming.png"))
             
-        self.fan.set_performance_mode(mode)
-        
-        self.fan.set_fan_mode(target_fan_mode)
-        
-        if hasattr(self, 'max_fan_switch') and self.max_fan_switch.get_active():
-            self.fan.set_fan_full_mode(True)
-            self.fan.set_fan_mode(FanCtrlMode.FullSpeed)
-        else:
-            self.fan.set_fan_full_mode(False)
+        def apply_hw():
+            self.fan.set_performance_mode(mode)
+            self.fan.set_fan_mode(target_fan_mode)
             
-        self._restore_back_zone_if_needed()
+            if hasattr(self, 'max_fan_switch') and self.max_fan_switch.get_active():
+                self.fan.set_fan_full_mode(True)
+                self.fan.set_fan_mode(FanCtrlMode.FullSpeed)
+            else:
+                self.fan.set_fan_full_mode(False)
+                
+            GLib.idle_add(self._restore_back_zone_if_needed)
+            
+        if hasattr(self, 'ui_executor'):
+            self.ui_executor.submit(apply_hw)
+        else:
+            apply_hw()
             
         if save:
             self.config_mgr.config["performance"]["mode"] = mode
             self.config_mgr.save()
 
     def on_max_fan_toggled(self, switch, state):
-        self.fan.set_fan_full_mode(state)
-        if state:
-            self.fan.set_fan_mode(FanCtrlMode.FullSpeed)
+        def apply_hw():
+            self.fan.set_fan_full_mode(state)
+            if state:
+                self.fan.set_fan_mode(FanCtrlMode.FullSpeed)
+            else:
+                self.fan.set_fan_mode(FanCtrlMode.FullSpeedOff)
+                if self.btn_office.has_css_class("active"):
+                    self.fan.set_fan_mode(FanCtrlMode.OfficeMode)
+                elif self.btn_balance.has_css_class("active"):
+                    self.fan.set_fan_mode(FanCtrlMode.PerformanceMode)
+                elif self.btn_gaming.has_css_class("active"):
+                    self.fan.set_fan_mode(FanCtrlMode.GamingMode)
+            GLib.idle_add(self._restore_back_zone_if_needed)
+            
+        if hasattr(self, 'ui_executor'):
+            self.ui_executor.submit(apply_hw)
         else:
-            self.fan.set_fan_mode(FanCtrlMode.FullSpeedOff)
-            if self.btn_office.has_css_class("active"):
-                self.fan.set_fan_mode(FanCtrlMode.OfficeMode)
-            elif self.btn_balance.has_css_class("active"):
-                self.fan.set_fan_mode(FanCtrlMode.PerformanceMode)
-            elif self.btn_gaming.has_css_class("active"):
-                self.fan.set_fan_mode(FanCtrlMode.GamingMode)
-                
-        self._restore_back_zone_if_needed()
+            apply_hw()
                 
         self.config_mgr.config["performance"]["max_fan"] = state
         self.config_mgr.save()
@@ -1032,60 +1043,67 @@ Comment=Run GT Control Center in background
         device_idx = self.kb_device_dropdown.get_selected()
         audio_device = self.kb_audio_device_ids[device_idx] if hasattr(self, 'kb_audio_device_ids') and device_idx < len(self.kb_audio_device_ids) else None
         
-        if zone == 0:
-            mode_map = {
-                0: KeyboardLightMode.LightOFF,
-                1: KeyboardLightMode.Always,
-                2: KeyboardLightMode.Breath,
-                3: KeyboardLightMode.GradualChange,
-                4: KeyboardLightMode.GradualChange,
-                5: KeyboardLightMode.RainBow,
-                6: KeyboardLightMode.Flow,
-                7: KeyboardLightMode.Wave,
-                8: KeyboardLightMode.RhythmNormal,
-                9: KeyboardLightMode.RhythmDance
-            }
-            mapped_mode = mode_map.get(idx, KeyboardLightMode.Always)
-            if idx == 0:
-                hex_color = "#000000"
-            elif idx in (3, 4, 5):
-                hex_color = "#FFFFFF"
+        def apply_hw():
+            nonlocal hex_color
+            if zone == 0:
+                mode_map = {
+                    0: KeyboardLightMode.LightOFF,
+                    1: KeyboardLightMode.Always,
+                    2: KeyboardLightMode.Breath,
+                    3: KeyboardLightMode.GradualChange,
+                    4: KeyboardLightMode.GradualChange,
+                    5: KeyboardLightMode.RainBow,
+                    6: KeyboardLightMode.Flow,
+                    7: KeyboardLightMode.Wave,
+                    8: KeyboardLightMode.RhythmNormal,
+                    9: KeyboardLightMode.RhythmDance
+                }
+                mapped_mode = mode_map.get(idx, KeyboardLightMode.Always)
+                if idx == 0:
+                    hex_color = "#000000"
+                elif idx in (3, 4, 5):
+                    hex_color = "#FFFFFF"
 
-            # Sync the effect to all individual zones so they don't revert if a specific zone is later configured
-            # (Only sync static colors and Off to avoid animation timer glitches like 'Color Jump')
-            if idx <= 2 or idx == 4:
+                # Sync the effect to all individual zones so they don't revert if a specific zone is later configured
+                # (Only sync static colors and Off to avoid animation timer glitches like 'Color Jump')
+                if idx <= 2 or idx == 4:
+                    cmd_map = {1: 6, 2: 6, 3: 7, 4: 7}
+                    offset_map = {1: 0, 2: 4, 3: 0, 4: 4}
+                    zone_mode_map = {0: 0, 1: 0, 2: 1, 3: 2, 4: 2, 5: 3}
+                    zone_mode = zone_mode_map.get(idx, 0)
+                    sync_color = hex_color
+                    for z in range(1, 5):
+                        self.lighting.set_zone_mode(cmd_map[z], offset_map[z] | zone_mode, sync_color, brightness=brightness)
+                
+                if idx != 4:
+                    self.lighting.set_keyboard_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth, audio_device=audio_device)
+
+            elif 1 <= zone <= 4:
                 cmd_map = {1: 6, 2: 6, 3: 7, 4: 7}
                 offset_map = {1: 0, 2: 4, 3: 0, 4: 4}
-                zone_mode_map = {0: 0, 1: 0, 2: 1, 3: 2, 4: 2, 5: 3}
+                cmd = cmd_map[zone]
+                offset = offset_map[zone]
+                
+                zone_mode_map = {
+                    0: 0, # Off -> Always (black)
+                    1: 0, # Static Color -> Always
+                    2: 1, # Breathing -> Breath
+                    3: 2, # Neon Cycle -> GradualChange
+                    4: 3  # Rainbow -> RainBow
+                }
                 zone_mode = zone_mode_map.get(idx, 0)
-                sync_color = hex_color
-                for z in range(1, 5):
-                    self.lighting.set_zone_mode(cmd_map[z], offset_map[z] | zone_mode, sync_color, brightness=brightness)
-            
-            if idx != 4:
-                self.lighting.set_keyboard_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth, audio_device=audio_device)
+                
+                param = offset | zone_mode
+                if idx == 0:
+                    hex_color = "#000000"
+                elif idx in (3, 4):
+                    hex_color = "#FFFFFF"  # Hardware requires white color for full-spectrum animations
+                self.lighting.set_zone_mode(cmd, param, hex_color, brightness=brightness)
 
-        elif 1 <= zone <= 4:
-            cmd_map = {1: 6, 2: 6, 3: 7, 4: 7}
-            offset_map = {1: 0, 2: 4, 3: 0, 4: 4}
-            cmd = cmd_map[zone]
-            offset = offset_map[zone]
-            
-            zone_mode_map = {
-                0: 0, # Off -> Always (black)
-                1: 0, # Static Color -> Always
-                2: 1, # Breathing -> Breath
-                3: 2, # Neon Cycle -> GradualChange
-                4: 3  # Rainbow -> RainBow
-            }
-            zone_mode = zone_mode_map.get(idx, 0)
-            
-            param = offset | zone_mode
-            if idx == 0:
-                hex_color = "#000000"
-            elif idx in (3, 4):
-                hex_color = "#FFFFFF"  # Hardware requires white color for full-spectrum animations
-            self.lighting.set_zone_mode(cmd, param, hex_color, brightness=brightness)
+        if hasattr(self, 'ui_executor'):
+            self.ui_executor.submit(apply_hw)
+        else:
+            apply_hw()
             
         if "keyboard_zones" not in self.config_mgr.config:
             self.config_mgr.config["keyboard_zones"] = {}
@@ -1124,36 +1142,43 @@ Comment=Run GT Control Center in background
         device_idx = self.bz_device_dropdown.get_selected()
         audio_device = self.bz_audio_device_ids[device_idx] if hasattr(self, 'bz_audio_device_ids') and device_idx < len(self.bz_audio_device_ids) else None
         
-        if idx == 0:
-            self.lighting.bz_anim = None
-            self.lighting.update_animations()
-            
-            perf_mode = self.config_mgr.config.get("performance", {}).get("mode", 1)
-            if perf_mode == 0:
-                bz_cmd = BackLightCmd.SliceMode
-            elif perf_mode == 1:
-                bz_cmd = BackLightCmd.BalanceMode
-            else:
-                bz_cmd = BackLightCmd.GameMode
+        def apply_hw():
+            nonlocal hex_color
+            if idx == 0:
+                self.lighting.bz_anim = None
+                self.lighting.update_animations()
                 
-            self.lighting.set_serial_back_zone_mode(bz_cmd, "#000000", brightness=100)
-            hex_color = "#000000"
-        else:
-            mode_map_back = {
-                1: BackLightCmd.Light_Close,
-                2: BackLightCmd.Light_AlwaysOn,
-                3: BackLightCmd.Light_Breath,
-                4: BackLightCmd.Light_Rythm,
-                5: 99,
-                6: BackLightCmd.Light_Jump,
-                7: 98,
-                8: BackLightCmd.Light_Round,
-                9: BackLightCmd.Light_Cover
-            }
-            mapped_mode = mode_map_back.get(idx, BackLightCmd.Light_AlwaysOn)
-            if idx == 1:
+                perf_mode = self.config_mgr.config.get("performance", {}).get("mode", 1)
+                if perf_mode == 0:
+                    bz_cmd = BackLightCmd.SliceMode
+                elif perf_mode == 1:
+                    bz_cmd = BackLightCmd.BalanceMode
+                else:
+                    bz_cmd = BackLightCmd.GameMode
+                    
+                self.lighting.set_serial_back_zone_mode(bz_cmd, "#000000", brightness=100)
                 hex_color = "#000000"
-            self.lighting.set_serial_back_zone_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth, audio_device=audio_device)
+            else:
+                mode_map_back = {
+                    1: BackLightCmd.Light_Close,
+                    2: BackLightCmd.Light_AlwaysOn,
+                    3: BackLightCmd.Light_Breath,
+                    4: BackLightCmd.Light_Rythm,
+                    5: 99,
+                    6: BackLightCmd.Light_Jump,
+                    7: 98,
+                    8: BackLightCmd.Light_Round,
+                    9: BackLightCmd.Light_Cover
+                }
+                mapped_mode = mode_map_back.get(idx, BackLightCmd.Light_AlwaysOn)
+                if idx == 1:
+                    hex_color = "#000000"
+                self.lighting.set_serial_back_zone_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth, audio_device=audio_device)
+
+        if hasattr(self, 'ui_executor'):
+            self.ui_executor.submit(apply_hw)
+        else:
+            apply_hw()
 
         self.config_mgr.config["backzone"].update({
             "mode": idx,
@@ -1212,8 +1237,8 @@ Comment=Run GT Control Center in background
 
             GLib.idle_add(update_ui)
 
-        if hasattr(self, 'executor'):
-            self.executor.submit(fetch_data)
+        if hasattr(self, 'monitor_executor'):
+            self.monitor_executor.submit(fetch_data)
         return True # Continue timer
 
     def animate_bar(self, bar, new_width):

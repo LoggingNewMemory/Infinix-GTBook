@@ -11,7 +11,7 @@ class ACPIWmi:
     """
     def __init__(self):
         self._is_mock = True
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         
     def _call_wmi_method(self, method_id: int, in_data: bytearray, retries=3) -> int:
         # Format bytearray to {0xXX, 0xXX, ...} string
@@ -43,7 +43,7 @@ class ACPIWmi:
                 else:
                     val = int(result)
                     
-                if val > 0:
+                if val >= 0:
                     return val
                 elif attempt < retries - 1:
                     time.sleep(0.1)
@@ -117,23 +117,32 @@ class ACPIWmi:
         return self.do_method(2)
         
     def ec_write_ram_cmd(self, address: int, data: int) -> int:
-        self.mem_io(768, 1, 148, 0)
-        self.mem_io(768, 1, 145, 0)
-        self.mem_io(768, 1, 146, 0)
-        self.mem_io(768, 1, 146, 1)
-        self.mem_io(768, 1, 144, 0)
-        self.mem_io(768, 1, 145, address)
-        self.mem_io(768, 1, 160, data)
-        self.mem_io(768, 1, 147, 161)
-        return 80
+        with self._lock:
+            self.mem_io(768, 1, 148, 0)
+            self.mem_io(768, 1, 145, 0)
+            self.mem_io(768, 1, 146, 0)
+            self.mem_io(768, 1, 146, 1)
+            self.mem_io(768, 1, 144, 0)
+            self.mem_io(768, 1, 145, address)
+            self.mem_io(768, 1, 160, data)
+            self.mem_io(768, 1, 147, 161)
+            return 80
         
     def ec_read_ram_cmd(self, address: int) -> int:
-        self.mem_io(768, 1, 148, 0)
-        self.mem_io(768, 1, 146, 1)
-        self.mem_io(768, 1, 144, 0)
-        self.mem_io(768, 1, 145, address)
-        self.mem_io(768, 1, 147, 160)
-        return self.mem_io(768, 0, 160, 0)
+        with self._lock:
+            self.mem_io(768, 1, 148, 0)
+            self.mem_io(768, 1, 146, 1)
+            self.mem_io(768, 1, 144, 0)
+            self.mem_io(768, 1, 145, address)
+            self.mem_io(768, 1, 147, 160)
+            
+            num2 = 0
+            while num2 < 100 and self.mem_io(768, 0, 147, 0) != 0:
+                num2 += 1
+                time.sleep(0.002)
+                
+            val = self.mem_io(768, 0, 160, 0)
+            return val if val != 2147483649 else 0
 
     def set_gpu_mode(self, mode: int) -> int:
         """
