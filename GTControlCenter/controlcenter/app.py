@@ -51,36 +51,51 @@ class ControlCenterApp(Adw.Application):
         return self.backend
         
 
+
     def do_command_line(self, command_line):
         args = command_line.get_arguments()
         
         mode = None
+        max_fan = None
+        
         for i, arg in enumerate(args):
             if arg == '--mode' and i + 1 < len(args):
                 mode_str = args[i+1].lower()
                 if mode_str == 'office': mode = 0
                 elif mode_str == 'balanced': mode = 1
                 elif mode_str == 'gaming': mode = 2
-                
-        if mode is not None:
+            elif arg == '--max-fan' and i + 1 < len(args):
+                mf_str = args[i+1].lower()
+                if mf_str == 'on': max_fan = True
+                elif mf_str == 'off': max_fan = False
+                elif mf_str == 'toggle':
+                    current = self.get_backend().config_mgr.config.get("performance", {}).get("max_fan", False)
+                    max_fan = not current
+                    
+        if mode is not None or max_fan is not None:
             if self.win:
                 def force_ui_update():
-                    self.win.set_performance_mode(mode, save=True)
-
+                    if mode is not None:
+                        self.win.set_performance_mode(mode, save=True)
+                    if max_fan is not None:
+                        self.win.set_max_fan(max_fan, save=True)
                     return False
                 from gi.repository import GLib
                 GLib.idle_add(force_ui_update)
-                
-
-            self.get_backend().config_mgr.config.setdefault("performance", {})["mode"] = mode
-            self.get_backend().config_mgr.save()
-            self.get_backend().apply_performance()
-            self.get_backend().apply_backzone()
-            
+            else:
+                if mode is not None:
+                    self.get_backend().config_mgr.config.setdefault("performance", {})["mode"] = mode
+                if max_fan is not None:
+                    self.get_backend().config_mgr.config.setdefault("performance", {})["max_fan"] = max_fan
+                self.get_backend().config_mgr.save()
+                self.get_backend().apply_performance()
+                if mode is not None:
+                    self.get_backend().apply_backzone()
             return 0
             
         self.activate()
         return 0
+
             
         self.activate()
         return 0

@@ -25,6 +25,10 @@ if '--tray-process' in sys.argv:
     def show_window(icon, item):
         subprocess.Popen(exec_cmd)
 
+
+    def set_max_fan(icon, item=None):
+        subprocess.Popen(exec_cmd + ['--max-fan', 'toggle'])
+
     def set_mode(mode_name):
         def _callback(icon, item=None):
             subprocess.Popen(exec_cmd + ['--mode', mode_name])
@@ -40,6 +44,7 @@ if '--tray-process' in sys.argv:
         
     menu = pystray.Menu(
         pystray.MenuItem("Show GT Control Center", show_window, default=True),
+        pystray.MenuItem("Toggle Max Fan", set_max_fan),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("Office Mode", set_mode("office")),
         pystray.MenuItem("Balanced Mode", set_mode("balanced")),

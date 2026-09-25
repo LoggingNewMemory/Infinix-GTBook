@@ -1016,6 +1016,16 @@ Comment=Run GT Control Center in background
             self.config_mgr.config["performance"]["mode"] = mode
             self.config_mgr.save()
 
+
+    def set_max_fan(self, state: bool, save=True):
+        self.max_fan_switch.set_active(state)
+        # Note: set_active triggers the 'state-set' signal automatically if it changes,
+        # but if it doesn't change, we still might want to apply hw.
+        # Actually, let's just let the signal handler do the hardware work.
+        if save:
+            self.config_mgr.config.setdefault("performance", {})["max_fan"] = state
+            self.config_mgr.save()
+
     def on_max_fan_toggled(self, switch, state):
         def apply_hw():
             self.fan.set_fan_full_mode(state)
