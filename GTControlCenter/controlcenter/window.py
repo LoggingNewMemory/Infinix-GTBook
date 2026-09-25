@@ -827,6 +827,13 @@ class MainWindow(Adw.ApplicationWindow):
         self.autostart_switch.set_active(self.is_autostart_enabled())
         ctrl_box.append(self._create_control_row("Run on Startup", self.autostart_switch))
         
+        self.usb_charge_switch = Gtk.Switch()
+        self.usb_charge_switch.set_valign(Gtk.Align.CENTER)
+        self.usb_charge_switch.set_halign(Gtk.Align.END)
+        self.usb_charge_switch.connect("state-set", self.on_usb_charge_toggled)
+        self.usb_charge_switch.set_active(self.wmi.get_usb_charging())
+        ctrl_box.append(self._create_control_row("USB Charge While Off", self.usb_charge_switch))
+        
         reset_btn = Gtk.Button(label="Reset Configurations")
         reset_btn.add_css_class("action-btn")
         reset_btn.set_margin_top(20)
@@ -841,6 +848,12 @@ class MainWindow(Adw.ApplicationWindow):
 
     def is_autostart_enabled(self):
         return os.path.exists(self.get_autostart_path())
+
+    def on_usb_charge_toggled(self, switch, state):
+        if hasattr(self, 'ui_executor'):
+            self.ui_executor.submit(self.wmi.set_usb_charging, state)
+        else:
+            self.wmi.set_usb_charging(state)
 
     def on_autostart_toggled(self, switch, state):
         autostart_path = self.get_autostart_path()

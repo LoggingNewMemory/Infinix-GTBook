@@ -159,3 +159,11 @@ class ACPIWmi:
         """
         return self.ec_write_ram_cmd(65, 1 if flag else 0)
 
+
+    def set_usb_charging(self, enable: bool) -> int:
+        res = self.ec_write_ram_cmd(82, 1 if enable else 0)
+        self.smi(3, 1, 0, 1 if enable else 0)
+        return res
+
+    def get_usb_charging(self) -> bool:
+        return self.ec_read_ram_cmd(82) == 1
