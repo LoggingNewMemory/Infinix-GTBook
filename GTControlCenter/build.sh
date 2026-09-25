@@ -11,7 +11,7 @@ mkdir -p "$DIST_DIR"
 
 echo "Copying files to distribution folder..."
 cp -r assets controlcenter "$DIST_DIR/"
-cp run_app.py 99-byd-keyboard.rules acpi-call-perms.service install.sh uninstall.sh "$DIST_DIR/"
+cp run_app.py 99-byd-keyboard.rules 90-infinix-gtbook.hwdb acpi-call-perms.service install.sh uninstall.sh "$DIST_DIR/"
 
 echo "Creating tarball..."
 cd dist

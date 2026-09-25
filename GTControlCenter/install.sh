@@ -5,13 +5,16 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
+echo "Killing old instances..."
+pkill -f run_app.py || true
+
 echo "Installing GT Control Center to /opt/gt-controlcenter..."
 mkdir -p /opt/gt-controlcenter
 cp -r controlcenter assets run_app.py /opt/gt-controlcenter/
 
 echo "Setting up isolated virtual environment..."
 python3 -m venv /opt/gt-controlcenter/venv --system-site-packages
-/opt/gt-controlcenter/venv/bin/pip install pyusb psutil pyserial sounddevice numpy pystray pillow nvidia-ml-py
+/opt/gt-controlcenter/venv/bin/pip install pyusb psutil pyserial sounddevice numpy pystray pillow nvidia-ml-py evdev
 
 echo "Creating launcher script..."
 cat << 'EOF' > /usr/bin/gt-controlcenter
@@ -36,6 +39,8 @@ EOF
 
 echo "Copying udev rules..."
 cp 99-byd-keyboard.rules /etc/udev/rules.d/
+cp 90-infinix-gtbook.hwdb /etc/udev/hwdb.d/
+systemd-hwdb update
 udevadm control --reload-rules || true
 udevadm trigger || true
 

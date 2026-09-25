@@ -3,9 +3,10 @@ import gi
 
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Gtk, Adw, Gio
+from gi.repository import Gtk, Adw, Gio, GLib
 
 import subprocess
+import os
 
 from controlcenter.window import MainWindow
 
@@ -13,7 +14,7 @@ from controlcenter.window import MainWindow
 class ControlCenterApp(Adw.Application):
     def __init__(self, is_background=False):
         super().__init__(application_id='com.byd.controlcenter',
-                         flags=Gio.ApplicationFlags.FLAGS_NONE)
+                         flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
         self.is_background = is_background
         self.first_activate = True
                          
@@ -27,11 +28,11 @@ class ControlCenterApp(Adw.Application):
 
     def setup_tray(self):
         try:
-            import os
             if getattr(sys, 'frozen', False):
                 cmd = [sys.executable, '--tray-process']
             else:
-                cmd = [sys.executable, os.path.abspath(sys.argv[0]), '--tray-process']
+                script_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'run_app.py')
+                cmd = [sys.executable, script_path, '--tray-process']
             self.tray_proc = subprocess.Popen(cmd)
         except Exception as e:
             print("Failed to start tray process:", e)
@@ -40,7 +41,6 @@ class ControlCenterApp(Adw.Application):
         Adw.Application.do_startup(self)
         Adw.StyleManager.get_default().set_color_scheme(Adw.ColorScheme.PREFER_DARK)
         
-        # Keep application running in background
         self.hold()
         self.setup_tray()
 
@@ -49,15 +49,52 @@ class ControlCenterApp(Adw.Application):
             from controlcenter.backend import AppBackend
             self.backend = AppBackend()
         return self.backend
+        
+
+    def do_command_line(self, command_line):
+        args = command_line.get_arguments()
+        
+        mode = None
+        for i, arg in enumerate(args):
+            if arg == '--mode' and i + 1 < len(args):
+                mode_str = args[i+1].lower()
+                if mode_str == 'office': mode = 0
+                elif mode_str == 'balanced': mode = 1
+                elif mode_str == 'gaming': mode = 2
+                
+        if mode is not None:
+            if self.win:
+                def force_ui_update():
+                    self.win.set_performance_mode(mode, save=True)
+
+                    return False
+                from gi.repository import GLib
+                GLib.idle_add(force_ui_update)
+                
+
+            self.get_backend().config_mgr.config.setdefault("performance", {})["mode"] = mode
+            self.get_backend().config_mgr.save()
+            self.get_backend().apply_performance()
+            self.get_backend().apply_backzone()
+            
+            return 0
+            
+        self.activate()
+        return 0
+            
+        self.activate()
+        return 0
 
     def do_activate(self):
         if self.is_background and self.first_activate:
             self.first_activate = False
-            # Completely avoid creating a GTK window for true headless start
             self.get_backend().apply_all()
         else:
+            if self.win and not self.win.get_visible() and not self.win.get_realized():
+                self.win = None
             if not self.win:
                 self.win = MainWindow(self, self.get_backend())
+                self.win.set_hide_on_close(True)
             self.win.present()
             self.first_activate = False
 
@@ -71,4 +108,3 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
-
