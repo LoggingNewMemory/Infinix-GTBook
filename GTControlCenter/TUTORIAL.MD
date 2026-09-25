@@ -60,3 +60,30 @@ Once installed, you can launch the app directly using the executable inside the 
 - **`ModuleNotFoundError: No module named 'gi'`**: This happens if your virtual environment cannot access system packages. Make sure you included the `--system-site-packages` flag when creating the `venv` and that `python3-gi` (or `python-gobject` depending on your distro) is installed on your OS.
 - **USB/TTY Permission Denied errors**: Ensure the `install.sh` ran successfully. In rare cases, a system reboot might be required for the new `udev` and `systemd` rules to fully apply.
 - **Fan control fails**: Ensure the `acpi_call` kernel module is installed and loaded on your system.
+
+
+## 5. New Features: System Tray, Hardware Keys & CLI
+
+### System Tray Integration
+The application now features a persistent background system tray icon! When you close the main GT Control Center window, the tray process keeps running in the background. You can right-click the tray icon to:
+- Show the GT Control Center UI
+- **Toggle Max Fan**
+- Switch Performance Modes (Office, Balanced, Gaming)
+- Completely Quit the application
+
+### Hardware Key Integration
+Thanks to the upgraded `udev` hardware permissions, the background tray process now natively intercepts the special **F13 (Office)**, **F14 (Balanced)**, and **F15 (Gaming)** physical keyboard keys. Pressing these keys will instantly sync your laptop's hardware fan speed and seamlessly update the GT Control Center GUI and tray menu without any manual KDE shortcut configuration!
+
+### Command Line Interface (CLI)
+You can now trigger actions via terminal commands (or custom desktop shortcuts). When executed, these commands instantly synchronize via DBus with the background process and update the UI in real-time:
+```bash
+# Change Performance Mode
+gt-controlcenter --mode office
+gt-controlcenter --mode balanced
+gt-controlcenter --mode gaming
+
+# Max Fan Control
+gt-controlcenter --max-fan toggle
+gt-controlcenter --max-fan on
+gt-controlcenter --max-fan off
+```
