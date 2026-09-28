@@ -73,8 +73,10 @@ class AppBackend:
             mapped_mode = mode_map.get(idx, KeyboardLightMode.Always)
             if idx == 0:
                 hex_color = "#000000"
-            elif idx in (3, 4, 5):
-                hex_color = "#FFFFFF"
+            elif idx in (3, 5, 6):
+                hex_color = "#00FF00" # 1:1 Original Presets
+            elif idx == 4:
+                hex_color = "#00FFFF" # Custom Ocean Waves Preset
 
             if idx <= 2 or idx == 4:
                 cmd_map = {1: 6, 2: 6, 3: 7, 4: 7}
@@ -101,8 +103,10 @@ class AppBackend:
             param = offset | zone_mode
             if idx == 0:
                 hex_color = "#000000"
-            elif idx in (3, 4):
-                hex_color = "#FFFFFF"
+            elif idx == 3:
+                hex_color = "#00FF00"
+            elif idx == 4:
+                hex_color = "#00FFFF"
             self.lighting.set_zone_mode(cmd, param, hex_color, brightness=brightness)
 
     def apply_backzone(self):
