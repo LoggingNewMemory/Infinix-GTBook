@@ -740,6 +740,41 @@ class MainWindow(Adw.ApplicationWindow):
         row1.append(self.bz_mode_dropdown)
         ctrl_box.append(row1)
         
+        row1_bg = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=30)
+        row1_bg.set_margin_bottom(30)
+        
+        lbl_bg = Gtk.Label(label="Background Color")
+        lbl_bg.add_css_class("control-label")
+        row1_bg.append(lbl_bg)
+        
+        self.bz_bg_color_button = Gtk.Button()
+        self.bz_bg_current_rgba = Gdk.RGBA()
+        self.bz_bg_current_rgba.parse("#30EBE7")
+        self.bz_bg_color_popover = Gtk.Popover()
+        self.bz_bg_color_widget = Gtk.ColorChooserWidget()
+        self.bz_bg_color_widget.set_size_request(400, 300)
+        self.bz_bg_color_widget.set_rgba(self.bz_bg_current_rgba)
+        self.bz_bg_color_popover.set_child(self.bz_bg_color_widget)
+        self.bz_bg_color_popover.set_parent(self.bz_bg_color_button)
+        
+        def on_bg_popover_closed(p):
+            self.bz_bg_current_rgba = self.bz_bg_color_widget.get_rgba()
+            self._update_color_button_ui(self.bz_bg_color_button, self.bz_bg_current_rgba)
+            
+        self.bz_bg_color_popover.connect("closed", on_bg_popover_closed)
+        
+        def on_bg_button_clicked(btn):
+            self.bz_bg_color_widget.set_rgba(self.bz_bg_current_rgba)
+            self.bz_bg_color_popover.popup()
+            
+        self.bz_bg_color_button.connect("clicked", on_bg_button_clicked)
+        self.bz_bg_color_button.add_css_class("color-btn")
+        self.bz_bg_color_button.set_size_request(150, 40)
+        self._update_color_button_ui(self.bz_bg_color_button, self.bz_bg_current_rgba)
+        row1_bg.append(self.bz_bg_color_button)
+        
+        ctrl_box.append(row1_bg)
+        
         self.bz_brightness_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
         self.bz_brightness_scale.set_value(100)
         self.bz_brightness_scale.add_css_class("custom-scale")
@@ -1153,6 +1188,9 @@ Comment=Run GT Control Center in background
         color = self.bz_current_rgba
         hex_color = f"#{int(color.red*255):02x}{int(color.green*255):02x}{int(color.blue*255):02x}"
         
+        bg_color = getattr(self, "bz_bg_current_rgba", color)
+        bg_hex_color = f"#{int(bg_color.red*255):02x}{int(bg_color.green*255):02x}{int(bg_color.blue*255):02x}"
+        
         idx = self.bz_mode_dropdown.get_selected()
         
         brightness_pct = self.bz_brightness_scale.get_value()
@@ -1195,7 +1233,7 @@ Comment=Run GT Control Center in background
                 mapped_mode = mode_map_back.get(idx, BackLightCmd.Light_AlwaysOn)
                 if idx == 1:
                     hex_color = "#000000"
-                self.lighting.set_serial_back_zone_mode(mapped_mode, hex_color, brightness=brightness, sens=sens, smooth=smooth, audio_device=audio_device)
+                self.lighting.set_serial_back_zone_mode(mapped_mode, hex_color, brightness=int(brightness_pct), sens=sens, smooth=smooth, audio_device=audio_device, bg_color_hex=bg_hex_color)
 
         if hasattr(self, 'ui_executor'):
             self.ui_executor.submit(apply_hw)
@@ -1205,6 +1243,7 @@ Comment=Run GT Control Center in background
         self.config_mgr.config["backzone"].update({
             "mode": idx,
             "color": hex_color if idx not in (0, 1) else f"#{int(color.red*255):02x}{int(color.green*255):02x}{int(color.blue*255):02x}",
+            "bg_color": bg_hex_color,
             "brightness": brightness_pct,
             "audio_device": device_idx,
             "sens": sens,
@@ -1316,6 +1355,9 @@ Comment=Run GT Control Center in background
             self.bz_mode_dropdown.set_selected(bz.get("mode", 0))
             self.bz_current_rgba.parse(bz.get("color", "#FF0000"))
             self._update_color_button_ui(self.bz_color_button, self.bz_current_rgba)
+            if hasattr(self, 'bz_bg_current_rgba'):
+                self.bz_bg_current_rgba.parse(bz.get("bg_color", "#30EBE7"))
+                self._update_color_button_ui(self.bz_bg_color_button, self.bz_bg_current_rgba)
             self.bz_brightness_scale.set_value(bz.get("brightness", 100))
             if hasattr(self, 'bz_device_dropdown') and hasattr(self, 'bz_audio_device_ids'):
                 device_idx = bz.get("audio_device", 0)

@@ -263,8 +263,9 @@ class LightingService:
             return True
         return False
         
-    def set_serial_back_zone_mode(self, mode_enum_val: int, color_hex: str = "#FF0000", brightness: int = 100, sens: int = 50, smooth: int = 50, audio_device=None):
+    def set_serial_back_zone_mode(self, mode_enum_val: int, color_hex: str = "#FF0000", brightness: int = 100, sens: int = 50, smooth: int = 50, audio_device=None, bg_color_hex: str = "#30EBE7"):
         r, g, b = self._hex_to_rgb(color_hex)
+        bg_r, bg_g, bg_b = self._hex_to_rgb(bg_color_hex)
         from controlcenter.models.tx_buf import get_back_zone_packet, BackLightCmd
         
         is_rainbow = False
@@ -295,7 +296,7 @@ class LightingService:
             speed = 200
         elif mode_enum_val in (BackLightCmd.Light_Round, BackLightCmd.Light_Cover):
             speed = 4
-            fd1, fd2, fd3, fd4 = 48, 235, 231, 100
+            fd1, fd2, fd3, fd4 = bg_r, bg_g, bg_b, 100
             
         packet = get_back_zone_packet(mode_enum_val, r, g, b, brightness, speed=speed, fd1=fd1, fd2=fd2, fd3=fd3, fd4=fd4)
         if self.serial.send_data(packet):
