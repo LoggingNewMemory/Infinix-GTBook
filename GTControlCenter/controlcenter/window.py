@@ -643,7 +643,7 @@ class MainWindow(Adw.ApplicationWindow):
         ctrl_box.append(self._create_control_row("Color", self.kb_color_button))
         
         self.kb_mode_dropdown = Gtk.DropDown.new_from_strings([
-            "Off", "Static Color", "Breathing", "Neon Cycle", "Ocean Waves", "Rainbow", "Flow", "Wave", "Rhythm Normal", "Rhythm Dance"
+            "Off", "Static Color", "Breathing", "Gradual Change", "Ocean Waves", "Rainbow", "Flow", "Wave", "Rhythm Normal", "Rhythm Dance"
         ])
         self.kb_mode_dropdown.set_size_request(260, -1)
         self.kb_mode_dropdown.add_css_class("custom-dropdown")
@@ -930,11 +930,11 @@ Comment=Run GT Control Center in background
         
         if zone == 0:
             self.kb_mode_dropdown.set_model(Gtk.StringList.new([
-                "Off", "Static Color", "Breathing", "Neon Cycle", "Ocean Waves", "Rainbow", "Flow", "Wave", "Rhythm Normal", "Rhythm Dance"
+                "Off", "Static Color", "Breathing", "Gradual Change", "Ocean Waves", "Rainbow", "Flow", "Wave", "Rhythm Normal", "Rhythm Dance"
             ]))
         else:
             self.kb_mode_dropdown.set_model(Gtk.StringList.new([
-                "Off", "Static Color", "Breathing", "Neon Cycle", "Rainbow"
+                "Off", "Static Color", "Breathing", "Gradual Change", "Rainbow"
             ]))
             
         # Update preview image
@@ -1082,10 +1082,9 @@ Comment=Run GT Control Center in background
                     9: KeyboardLightMode.RhythmDance
                 }
                 mapped_mode = mode_map.get(idx, KeyboardLightMode.Always)
+                
                 if idx == 0:
                     hex_color = "#000000"
-                elif idx in (3, 5, 6):
-                    hex_color = "#00FF00"
                 elif idx == 4:
                     hex_color = "#00FFFF"
 
@@ -1094,7 +1093,7 @@ Comment=Run GT Control Center in background
                 if idx <= 2 or idx == 4:
                     cmd_map = {1: 6, 2: 6, 3: 7, 4: 7}
                     offset_map = {1: 0, 2: 4, 3: 0, 4: 4}
-                    zone_mode_map = {0: 0, 1: 0, 2: 1, 3: 2, 4: 2, 5: 3}
+                    zone_mode_map = {0: 0, 1: 0, 2: 1, 4: 2}
                     zone_mode = zone_mode_map.get(idx, 0)
                     sync_color = hex_color
                     for z in range(1, 5):
@@ -1113,7 +1112,7 @@ Comment=Run GT Control Center in background
                     0: 0, # Off -> Always (black)
                     1: 0, # Static Color -> Always
                     2: 1, # Breathing -> Breath
-                    3: 2, # Neon Cycle -> GradualChange
+                    3: 2, # Gradual Change -> GradualChange
                     4: 3  # Rainbow -> RainBow
                 }
                 zone_mode = zone_mode_map.get(idx, 0)
@@ -1121,10 +1120,6 @@ Comment=Run GT Control Center in background
                 param = offset | zone_mode
                 if idx == 0:
                     hex_color = "#000000"
-                elif idx == 3:
-                    hex_color = "#00FF00"  # 1:1 Original
-                elif idx == 4:
-                    hex_color = "#00FFFF"  # Ocean Waves
                 self.lighting.set_zone_mode(cmd, param, hex_color, brightness=brightness)
 
         if hasattr(self, 'ui_executor'):
