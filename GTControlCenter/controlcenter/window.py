@@ -640,7 +640,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.kb_color_button.add_css_class("color-btn")
         self.kb_color_button.set_size_request(-1, 40)
         self._update_color_button_ui(self.kb_color_button, self.kb_current_rgba)
-        ctrl_box.append(self._create_control_row("Color", self.kb_color_button))
+        self.kb_color_row = self._create_control_row("Color", self.kb_color_button)
+        ctrl_box.append(self.kb_color_row)
         
         self.kb_mode_dropdown = Gtk.DropDown.new_from_strings([
             "Off", "Static Color", "Breathing", "Gradual Change", "Ocean Waves", "Rainbow", "Flow", "Wave", "Rhythm Normal", "Rhythm Dance"
@@ -648,6 +649,15 @@ class MainWindow(Adw.ApplicationWindow):
         self.kb_mode_dropdown.set_size_request(260, -1)
         self.kb_mode_dropdown.add_css_class("custom-dropdown")
         ctrl_box.append(self._create_control_row("Effects", self.kb_mode_dropdown))
+        
+        def on_kb_mode_changed(dropdown, pspec):
+            idx = dropdown.get_selected()
+            if hasattr(self, 'kb_color_row'):
+                self.kb_color_row.set_visible(idx not in (0, 3, 4, 5, 6))
+                
+        self.kb_mode_dropdown.connect("notify::selected", on_kb_mode_changed)
+        if hasattr(self, 'kb_color_row'):
+            self.kb_color_row.set_visible(self.kb_mode_dropdown.get_selected() not in (0, 3, 4, 5, 6))
         
         self.kb_brightness_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
         self.kb_brightness_scale.set_value(100)
@@ -697,9 +707,9 @@ class MainWindow(Adw.ApplicationWindow):
         row1 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=30)
         row1.set_margin_bottom(30)
         
-        lbl_c = Gtk.Label(label="Color")
-        lbl_c.add_css_class("control-label")
-        row1.append(lbl_c)
+        self.bz_lbl_color = Gtk.Label(label="Color")
+        self.bz_lbl_color.add_css_class("control-label")
+        row1.append(self.bz_lbl_color)
         
         self.bz_color_button = Gtk.Button()
         self.bz_current_rgba = Gdk.RGBA()
@@ -740,12 +750,12 @@ class MainWindow(Adw.ApplicationWindow):
         row1.append(self.bz_mode_dropdown)
         ctrl_box.append(row1)
         
-        row1_bg = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=30)
-        row1_bg.set_margin_bottom(30)
+        self.bz_bg_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=30)
+        self.bz_bg_row.set_margin_bottom(30)
         
         lbl_bg = Gtk.Label(label="Background Color")
         lbl_bg.add_css_class("control-label")
-        row1_bg.append(lbl_bg)
+        self.bz_bg_row.append(lbl_bg)
         
         self.bz_bg_color_button = Gtk.Button()
         self.bz_bg_current_rgba = Gdk.RGBA()
@@ -771,9 +781,25 @@ class MainWindow(Adw.ApplicationWindow):
         self.bz_bg_color_button.add_css_class("color-btn")
         self.bz_bg_color_button.set_size_request(150, 40)
         self._update_color_button_ui(self.bz_bg_color_button, self.bz_bg_current_rgba)
-        row1_bg.append(self.bz_bg_color_button)
+        self.bz_bg_row.append(self.bz_bg_color_button)
         
-        ctrl_box.append(row1_bg)
+        ctrl_box.append(self.bz_bg_row)
+        
+        def on_bz_mode_changed(dropdown, pspec):
+            idx = dropdown.get_selected()
+            if hasattr(self, 'bz_bg_row'):
+                self.bz_bg_row.set_visible(idx in (8, 9))
+            if hasattr(self, 'bz_color_button') and hasattr(self, 'bz_lbl_color'):
+                show_color = idx not in (0, 1)
+                self.bz_color_button.set_visible(show_color)
+                self.bz_lbl_color.set_visible(show_color)
+                
+        self.bz_mode_dropdown.connect("notify::selected", on_bz_mode_changed)
+        self.bz_bg_row.set_visible(self.bz_mode_dropdown.get_selected() in (8, 9))
+        if hasattr(self, 'bz_color_button') and hasattr(self, 'bz_lbl_color'):
+            show_color = self.bz_mode_dropdown.get_selected() not in (0, 1)
+            self.bz_color_button.set_visible(show_color)
+            self.bz_lbl_color.set_visible(show_color)
         
         self.bz_brightness_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
         self.bz_brightness_scale.set_value(100)
